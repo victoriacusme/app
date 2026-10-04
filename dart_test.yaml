@@ -1,0 +1,3 @@
+tags:
+  contract:
+    # Requiere el backend levantado: CONTRACT_BASE_URL=http://localhost:8081
