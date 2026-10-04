@@ -6,7 +6,9 @@ import 'package:uuid/uuid.dart';
 
 import '../core/connectivity/connectivity_cubit.dart';
 import '../core/network/dio_client.dart';
+import '../core/security/biometric_auth.dart';
 import '../core/security/device_id_provider.dart';
+import '../core/security/jwe_encryptor.dart';
 import '../core/security/token_store.dart';
 import '../core/storage/encrypted_cache.dart';
 import '../features/accounts/application/get_movements.dart';
@@ -24,6 +26,7 @@ import '../features/auth/application/restore_session.dart';
 import '../features/auth/domain/auth_repository.dart';
 import '../features/auth/infrastructure/auth_remote_data_source.dart';
 import '../features/auth/infrastructure/auth_repository_impl.dart';
+import '../features/auth/infrastructure/jwks_client.dart';
 import '../features/auth/presentation/bloc/login_bloc.dart';
 import '../features/auth/presentation/onboarding/onboarding_cubit.dart';
 import '../features/customer/application/update_preferences.dart';
@@ -47,6 +50,7 @@ import '../features/transfers/domain/transfer_repository.dart';
 import '../features/transfers/infrastructure/transfer_remote_data_source.dart';
 import '../features/transfers/infrastructure/transfer_repository_impl.dart';
 import '../features/transfers/presentation/bloc/own_transfer_bloc.dart';
+import 'app_lock_cubit.dart';
 import 'app_settings_cubit.dart';
 import 'session_cubit.dart';
 
@@ -81,7 +85,15 @@ void configureDependencies({
 
   // Auth
   getIt
-    ..registerLazySingleton(() => AuthRemoteDataSource(getIt()))
+    ..registerLazySingleton(() => JwksClient(getIt()))
+    ..registerLazySingleton(
+      () => AuthRemoteDataSource(
+        getIt(),
+        // Login cifrado con JWE (Fase 8).
+        jwks: getIt(),
+        encryptor: JweEncryptor(),
+      ),
+    )
     ..registerLazySingleton<AuthRepository>(
       () => AuthRepositoryImpl(
         remote: getIt(),
@@ -161,9 +173,19 @@ void configureDependencies({
     ..registerFactory(() => FxCubit(getIt()));
 
   // App
-  getIt.registerLazySingleton(
-    () => AppSettingsCubit(session: getIt(), customers: getIt()),
-  );
+  getIt
+    ..registerLazySingleton(
+      () => AppSettingsCubit(session: getIt(), customers: getIt()),
+    )
+    ..registerLazySingleton<BiometricAuth>(LocalBiometricAuth.new)
+    ..registerLazySingleton(() => BiometricSettings(getIt()))
+    ..registerLazySingleton(
+      () => AppLockCubit(
+        biometrics: getIt(),
+        settings: getIt(),
+        session: getIt(),
+      ),
+    );
   getIt.registerLazySingleton(
     () => SessionCubit(
       restoreSession: getIt(),

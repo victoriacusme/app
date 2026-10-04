@@ -5,14 +5,17 @@ library;
 
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nexo_bank/core/network/dio_client.dart';
 import 'package:nexo_bank/core/result/failure.dart';
 import 'package:nexo_bank/core/result/result.dart';
 import 'package:nexo_bank/core/security/device_id_provider.dart';
+import 'package:nexo_bank/core/security/jwe_encryptor.dart';
 import 'package:nexo_bank/features/auth/domain/session.dart';
 import 'package:nexo_bank/features/auth/infrastructure/auth_remote_data_source.dart';
 import 'package:nexo_bank/features/auth/infrastructure/auth_repository_impl.dart';
+import 'package:nexo_bank/features/auth/infrastructure/jwks_client.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../helpers/fakes.dart';
@@ -27,18 +30,31 @@ void main() {
   final skip = baseUrl == null ? 'Define CONTRACT_BASE_URL' : false;
 
   late InMemoryTokenStore store;
+  final sentLoginBodies = <RequestOptions>[];
   late AuthRemoteDataSource remote;
   late AuthRepositoryImpl repository;
 
   setUp(() {
     store = InMemoryTokenStore();
-    remote = AuthRemoteDataSource(
-      createDioClient(
-        baseUrl: baseUrl ?? '',
-        tokenStore: store,
-        refresh: (rt) async => (await remote.refresh(rt)).toTokens(),
-        onSessionExpired: () {},
+    final dio = createDioClient(
+      baseUrl: baseUrl ?? '',
+      tokenStore: store,
+      refresh: (rt) async => (await remote.refresh(rt)).toTokens(),
+      onSessionExpired: () {},
+    );
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          if (options.path == '/auth/login') sentLoginBodies.add(options);
+          handler.next(options);
+        },
       ),
+    );
+    // El login viaja cifrado con JWE, igual que en la app.
+    remote = AuthRemoteDataSource(
+      dio,
+      jwks: JwksClient(dio),
+      encryptor: JweEncryptor(),
     );
     repository = AuthRepositoryImpl(
       remote: remote,
@@ -72,6 +88,10 @@ void main() {
       (result as Ok<Session>).value.customerId,
       '22222222-2222-2222-2222-222222222222',
     );
+    final sent = sentLoginBodies.last;
+    expect(sent.contentType, 'application/jose');
+    expect(sent.data, isA<String>());
+    expect(sent.data as String, isNot(contains('Nexo2026')));
     final first = store.tokens!;
 
     final rotated = (await remote.refresh(first.refreshToken)).toTokens();

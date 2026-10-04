@@ -1,25 +1,64 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 
 import '../../../core/network/request_options_x.dart';
+import '../../../core/security/jwe_encryptor.dart';
 import '../domain/registration.dart';
+import 'jwks_client.dart';
 import 'token_response_dto.dart';
 
 class AuthRemoteDataSource {
-  AuthRemoteDataSource(this._dio);
+  /// Sin [jwks] ni [encryptor] el login viaja como JSON plano (solo tests).
+  AuthRemoteDataSource(this._dio, {this._jwks, this._encryptor});
+
+  static const _joseContentType = 'application/jose';
 
   final Dio _dio;
+  final JwksClient? _jwks;
+  final JweEncryptor? _encryptor;
 
+  /// Con JWE configurado, las credenciales viajan cifradas con la clave
+  /// `enc` del JWKS (`Content-Type: application/jose`). Si el backend rotó
+  /// la clave, se vuelve a leer el JWKS y se reintenta una sola vez.
   Future<TokenResponseDto> login({
     required String username,
     required String password,
     required String deviceId,
   }) async {
-    final response = await _dio.post<Map<String, dynamic>>(
-      '/auth/login',
-      data: {'username': username, 'password': password, 'deviceId': deviceId},
-      options: RequestFlags.public(),
-    );
-    return TokenResponseDto.fromJson(response.data!);
+    final body = {
+      'username': username,
+      'password': password,
+      'deviceId': deviceId,
+    };
+    final jwks = _jwks;
+    final encryptor = _encryptor;
+    if (jwks == null || encryptor == null) {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/auth/login',
+        data: body,
+        options: RequestFlags.public(),
+      );
+      return TokenResponseDto.fromJson(response.data!);
+    }
+
+    Future<TokenResponseDto> send({required bool refreshKey}) async {
+      final key = await jwks.encryptionKey(refresh: refreshKey);
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/auth/login',
+        data: encryptor.encrypt(jsonEncode(body), key),
+        options: RequestFlags.public().copyWith(contentType: _joseContentType),
+      );
+      return TokenResponseDto.fromJson(response.data!);
+    }
+
+    try {
+      return await send(refreshKey: false);
+    } on DioException catch (e) {
+      final code = (e.response?.data as Map?)?['code'];
+      if (code != 'invalid-encrypted-payload') rethrow;
+      return send(refreshKey: true);
+    }
   }
 
   Future<TokenResponseDto> register(

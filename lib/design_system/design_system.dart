@@ -9,3 +9,4 @@ export 'widgets/primary_button.dart';
 export 'widgets/skeleton.dart';
 export 'widgets/offline_banner.dart';
 export 'widgets/stale_data_banner.dart';
+export 'widgets/privacy_cover.dart';

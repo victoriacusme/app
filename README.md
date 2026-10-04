@@ -3,6 +3,17 @@
 App de banca personas. Arquitectura hexagonal por feature
 (`domain` · `application` · `infrastructure` · `presentation`) con Bloc.
 
+| Home joven (Ana) | Home premium (Carlos) | Home emprendedor (Lucía) | Movimientos | Confirmar transferencia |
+|---|---|---|---|---|
+| ![](docs/screenshots/02_home_joven_ana.png) | ![](docs/screenshots/07_home_premium_carlos.png) | ![](docs/screenshots/09_home_emprendedor_lucia.png) | ![](docs/screenshots/03_movimientos.png) | ![](docs/screenshots/05_transferencia_confirmar.png) |
+
+Capturas reales del emulador contra el backend (`docs/screenshots/`). La
+misma app muestra un home distinto por segmento, y el tema oscuro de Ana
+viene de sus preferencias guardadas en el backend.
+
+**Documentación:** [ADRs](docs/adr/README.md) ·
+[Uso de IA](docs/AI_USAGE.md) · [Contribuir](CONTRIBUTING.md)
+
 ## Requisitos
 
 - Flutter 3.47.6 (stable), Dart 3.13
@@ -18,6 +29,11 @@ flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8080
 
 # Simulador iOS
 flutter run --dart-define=API_BASE_URL=http://localhost:8080
+
+# Producción: HTTPS con certificate pinning (pin actual + pin de respaldo)
+flutter build apk --release \
+  --dart-define=API_BASE_URL=https://api.nexo.ec \
+  --dart-define=PIN_SHA256=<pin actual>,<pin de respaldo>
 ```
 
 En debug se permite HTTP solo hacia `10.0.2.2`, `localhost` y `127.0.0.1`.
@@ -32,6 +48,15 @@ También puedes crear una cuenta desde "¿No tienes cuenta? Crea una".
 ```bash
 flutter analyze
 flutter test
+
+# E2E en un emulador o dispositivo, contra el backend real:
+#  1) login → home → movimientos
+#  2) login → transferencia propia → los saldos cambian (devuelve el dinero)
+flutter test integration_test/login_movements_test.dart integration_test/own_transfer_test.dart -d emulator-5554
+
+# Regenerar las capturas de docs/screenshots
+flutter drive --driver=test_driver/integration_test.dart \
+  --target=integration_test/screenshots_test.dart -d emulator-5554
 
 # Contrato contra el backend real vía gateway (opcional; mueve $1,00
 # entre cuentas de `carlos` y lo devuelve)
@@ -55,9 +80,10 @@ Ver [CONTRIBUTING.md](CONTRIBUTING.md) (Trunk Based Development y Conventional C
 
 ```
 lib/
-├── app/            app · router · di · session_cubit
-├── core/           config · network (Dio + interceptores) · security · storage
-│                   (Hive cifrado) · connectivity · money · result
+├── app/            app · router · di · session · ajustes · bloqueo biométrico
+├── core/           config · network (Dio, interceptores, pinning) · security
+│                   (tokens, JWE, biometría) · storage (Hive cifrado) ·
+│                   connectivity · money · navigation (deep links) · result
 ├── design_system/  tema · tokens · widgets (skeleton, banners, estados)
 └── features/
     ├── auth/           login · onboarding (registro en 4 pasos)
@@ -67,6 +93,9 @@ lib/
     ├── experience/     home SDUI · registry · componentes
     ├── fx/             tipo de cambio (servicio externo)
     └── notifications/  aviso local tras transferir · deep links
+test/               unit · bloc · widget · golden · contract · chaos
+integration_test/   E2E (login y movimientos · transferencia) · capturas
+docs/               ADRs · uso de IA · capturas
 ```
 
 ## Home dinámico (SDUI)
@@ -94,6 +123,19 @@ el `ComponentRegistry` traduce cada `type` a un widget:
 
 Deep links soportados: `app://transfers`, `app://accounts/{id}`,
 `app://profile`, `app://home`. Los demás muestran "disponible pronto".
+
+## Seguridad
+
+| Medida | Detalle | ADR |
+|---|---|---|
+| Login cifrado con JWE | RSA-OAEP-256 + A256GCM con la clave `enc` del JWKS; la contraseña nunca viaja en claro | [0008](docs/adr/0008-login-con-jwe.md) |
+| Certificate pinning | Por clave pública (SPKI), activo con `PIN_SHA256` en producción | [0009](docs/adr/0009-certificate-pinning-spki.md) |
+| Tokens | Solo en Keychain/Keystore; refresh rotativo con cola ante 401 | — |
+| Caché cifrada | Hive con AES-256; se borra al cerrar sesión | [0003](docs/adr/0003-hive-ce-cifrado.md) |
+| Biometría | Opcional, por dispositivo, para volver a entrar | [0010](docs/adr/0010-biometria-y-privacidad.md) |
+| Privacidad | `FLAG_SECURE` en Android release; la app se tapa en el selector de apps | [0010](docs/adr/0010-biometria-y-privacidad.md) |
+| Datos enmascarados | Cuentas `****4521`, cédula y teléfono enmascarados desde el backend | — |
+| Dinero | Idempotency-Key por operación, sin reintentos ni cola sin conexión | [0006](docs/adr/0006-dinero-sin-conexion.md) |
 
 ## Notificaciones
 

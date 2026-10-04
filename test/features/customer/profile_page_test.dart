@@ -1,4 +1,5 @@
 import 'package:bloc_test/bloc_test.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -66,5 +67,14 @@ void main() {
     await tester.pump();
 
     expect(find.textContaining('No pudimos guardar'), findsOneWidget);
+  });
+
+  testWidgets('el switch de biometría solo aparece si el equipo la tiene', (
+    tester,
+  ) async {
+    when(() => bloc.state).thenReturn(loaded);
+    await pump(tester);
+
+    expect(find.byKey(const Key('profile_biometrics')), findsNothing);
   });
 }

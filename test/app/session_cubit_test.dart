@@ -34,7 +34,7 @@ void main() {
     setUp: () => when(() => restore()).thenAnswer((_) async => session),
     build: build,
     act: (c) => c.restore(),
-    expect: () => const [SessionAuthenticated(session)],
+    expect: () => const [SessionAuthenticated(session, restored: true)],
   );
 
   blocTest<SessionCubit, SessionState>(

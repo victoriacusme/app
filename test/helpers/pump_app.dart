@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:nexo_bank/app/app_lock_cubit.dart';
 import 'package:nexo_bank/app/session_cubit.dart';
 import 'package:nexo_bank/core/connectivity/connectivity_cubit.dart';
 import 'package:nexo_bank/design_system/design_system.dart';
@@ -13,6 +14,9 @@ class MockConnectivityCubit extends MockCubit<ConnectivityStatus>
 
 class MockSessionCubit extends MockCubit<SessionState>
     implements SessionCubit {}
+
+class MockAppLockCubit extends MockCubit<AppLockState>
+    implements AppLockCubit {}
 
 /// Monta [child] con tema, router mínimo y los cubits globales.
 Future<GoRouter> pumpPage(
@@ -25,6 +29,8 @@ Future<GoRouter> pumpPage(
   if (connectivity == null) {
     when(() => conn.state).thenReturn(ConnectivityStatus.online);
   }
+  final lock = MockAppLockCubit();
+  when(() => lock.state).thenReturn(const AppLockState());
   final session = MockSessionCubit();
   when(() => session.state).thenReturn(const SessionUnknown());
   final router = GoRouter(
@@ -41,6 +47,7 @@ Future<GoRouter> pumpPage(
       providers: [
         BlocProvider<ConnectivityCubit>.value(value: conn),
         BlocProvider<SessionCubit>.value(value: session),
+        BlocProvider<AppLockCubit>.value(value: lock),
         ...providers,
       ],
       child: MaterialApp.router(theme: AppTheme.light(), routerConfig: router),

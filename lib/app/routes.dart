@@ -2,6 +2,7 @@ abstract final class Routes {
   static const splash = '/splash';
   static const login = '/login';
   static const register = '/register';
+  static const locked = '/locked';
   static const home = '/home';
   static const transfer = '/transfer';
   static const profile = '/profile';

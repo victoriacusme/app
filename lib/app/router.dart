@@ -18,21 +18,27 @@ import '../features/experience/presentation/home_page.dart';
 import '../features/fx/presentation/fx_cubit.dart';
 import '../features/transfers/presentation/bloc/own_transfer_bloc.dart';
 import '../features/transfers/presentation/pages/transfer_page.dart';
+import 'app_lock_cubit.dart';
 import 'di.dart';
+import 'pages/locked_page.dart';
 import 'pages/splash_page.dart';
 import 'routes.dart';
 import 'session_cubit.dart';
 
 export 'routes.dart';
 
-GoRouter createRouter(SessionCubit session) {
+GoRouter createRouter(SessionCubit session, AppLockCubit lock) {
   return GoRouter(
     initialLocation: Routes.splash,
-    refreshListenable: _StreamListenable(session.stream),
+    refreshListenable: Listenable.merge([
+      _StreamListenable(session.stream),
+      _StreamListenable(lock.stream),
+    ]),
     redirect: (context, state) =>
-        _redirect(session.state, state.matchedLocation),
+        _redirect(session.state, lock.state, state.matchedLocation),
     routes: [
       GoRoute(path: Routes.splash, builder: (_, _) => const SplashPage()),
+      GoRoute(path: Routes.locked, builder: (_, _) => const LockedPage()),
       GoRoute(
         path: Routes.login,
         builder: (_, _) => BlocProvider(
@@ -99,8 +105,17 @@ GoRouter createRouter(SessionCubit session) {
   );
 }
 
-String? _redirect(SessionState session, String location) {
-  const publicRoutes = {Routes.splash, Routes.login, Routes.register};
+String? _redirect(SessionState session, AppLockState lock, String location) {
+  // Con la app bloqueada solo se ve la pantalla de biometría.
+  if (session is SessionAuthenticated && lock.locked) {
+    return location == Routes.locked ? null : Routes.locked;
+  }
+  const publicRoutes = {
+    Routes.splash,
+    Routes.login,
+    Routes.register,
+    Routes.locked,
+  };
   final isPublic = publicRoutes.contains(location);
   return switch (session) {
     SessionUnknown() => location == Routes.splash ? null : Routes.splash,

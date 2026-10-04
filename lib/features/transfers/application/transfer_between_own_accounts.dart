@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../../../core/result/result.dart';
 import '../../accounts/domain/account_repository.dart';
 import '../domain/transfer.dart';
@@ -28,10 +30,14 @@ class TransferBetweenOwnAccounts {
       await _accounts.invalidate(
         accountIds: [draft.source.id, draft.target.id],
       );
-      try {
-        await _notifier?.transferCompleted(draft, transfer);
-      } catch (_) {
-        // Un fallo al notificar no cambia el resultado de la transferencia.
+      // No se espera: pedir el permiso de notificaciones puede mostrar un
+      // diálogo, y el comprobante no debe quedar bloqueado por eso. Un fallo
+      // al notificar tampoco cambia el resultado de la transferencia.
+      if (_notifier case final notifier?) {
+        unawaited(
+          Future.sync(() => notifier.transferCompleted(draft, transfer))
+              .catchError((Object _) {}),
+        );
       }
     }
     return result;

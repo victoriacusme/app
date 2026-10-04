@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../config/env.dart';
 import '../security/token_store.dart';
+import 'certificate_pinning.dart';
 import 'interceptors/auth_interceptor.dart';
 import 'interceptors/circuit_breaker_interceptor.dart';
 import 'interceptors/correlation_id_interceptor.dart';
@@ -23,6 +24,7 @@ Dio createDioClient({
   String baseUrl = Env.apiBaseUrl,
   CircuitBreakerInterceptor? circuitBreaker,
   Delay? retryDelay,
+  CertificatePinning? pinning,
 }) {
   final dio = Dio(
     BaseOptions(
@@ -33,6 +35,8 @@ Dio createDioClient({
       responseType: ResponseType.json,
     ),
   );
+  // En producción (con PIN_SHA256) solo se aceptan los certificados pineados.
+  (pinning ?? CertificatePinning.fromEnvironment())?.applyTo(dio);
   dio.interceptors.addAll([
     CorrelationIdInterceptor(),
     circuitBreaker ?? CircuitBreakerInterceptor(),

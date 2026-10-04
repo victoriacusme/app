@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Usamos Face ID para que ingreses a Nexo Bank de forma rápida y segura.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<!-- Permite HTTP solo hacia localhost (simulador contra el backend local). -->

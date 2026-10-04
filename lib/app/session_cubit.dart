@@ -18,12 +18,15 @@ final class SessionUnknown extends SessionState {
 }
 
 final class SessionAuthenticated extends SessionState {
-  const SessionAuthenticated(this.session);
+  const SessionAuthenticated(this.session, {this.restored = false});
 
   final Session session;
 
+  /// La sesión se recuperó al abrir la app (no hubo login con contraseña).
+  final bool restored;
+
   @override
-  List<Object?> get props => [session];
+  List<Object?> get props => [session, restored];
 }
 
 final class SessionUnauthenticated extends SessionState {
@@ -53,7 +56,7 @@ class SessionCubit extends Cubit<SessionState> {
     emit(
       session == null
           ? const SessionUnauthenticated()
-          : SessionAuthenticated(session),
+          : SessionAuthenticated(session, restored: true),
     );
   }
 

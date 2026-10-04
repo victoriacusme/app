@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../core/connectivity/connectivity_cubit.dart';
 import '../core/navigation/deep_links.dart';
 import '../design_system/design_system.dart';
+import 'app_lock_cubit.dart';
 import 'app_settings_cubit.dart';
 import 'router.dart';
 import 'session_cubit.dart';
@@ -17,6 +18,7 @@ class NexoApp extends StatefulWidget {
     required this.sessionCubit,
     required this.connectivityCubit,
     required this.settingsCubit,
+    required this.lockCubit,
     this.deepLinks = const Stream.empty(),
     this.initialDeepLink,
     super.key,
@@ -25,6 +27,7 @@ class NexoApp extends StatefulWidget {
   final SessionCubit sessionCubit;
   final ConnectivityCubit connectivityCubit;
   final AppSettingsCubit settingsCubit;
+  final AppLockCubit lockCubit;
 
   /// Deep links que llegan mientras la app corre (p. ej. al tocar una
   /// notificación).
@@ -38,9 +41,13 @@ class NexoApp extends StatefulWidget {
 }
 
 class _NexoAppState extends State<NexoApp> {
-  late final GoRouter _router = createRouter(widget.sessionCubit);
+  late final GoRouter _router = createRouter(
+    widget.sessionCubit,
+    widget.lockCubit,
+  );
   late final StreamSubscription<String> _links;
   late final StreamSubscription<SessionState> _session;
+  late final StreamSubscription<AppLockState> _lock;
 
   /// Ruta pendiente hasta que haya sesión (el login va primero).
   String? _pending;
@@ -54,6 +61,7 @@ class _NexoAppState extends State<NexoApp> {
       _openPending();
     });
     _session = widget.sessionCubit.stream.listen((_) => _openPending());
+    _lock = widget.lockCubit.stream.listen((_) => _openPending());
   }
 
   static String? _routeOf(String? link) =>
@@ -61,7 +69,9 @@ class _NexoAppState extends State<NexoApp> {
 
   void _openPending() {
     final route = _pending;
-    if (route == null || widget.sessionCubit.state is! SessionAuthenticated) {
+    if (route == null ||
+        widget.sessionCubit.state is! SessionAuthenticated ||
+        widget.lockCubit.state.locked) {
       return;
     }
     _pending = null;
@@ -73,6 +83,7 @@ class _NexoAppState extends State<NexoApp> {
   void dispose() {
     unawaited(_links.cancel());
     unawaited(_session.cancel());
+    unawaited(_lock.cancel());
     _router.dispose();
     super.dispose();
   }
@@ -84,6 +95,7 @@ class _NexoAppState extends State<NexoApp> {
         BlocProvider.value(value: widget.sessionCubit),
         BlocProvider.value(value: widget.connectivityCubit),
         BlocProvider.value(value: widget.settingsCubit),
+        BlocProvider.value(value: widget.lockCubit),
       ],
       child: BlocBuilder<AppSettingsCubit, AppSettings>(
         buildWhen: (a, b) => a.themeMode != b.themeMode,
@@ -97,7 +109,11 @@ class _NexoAppState extends State<NexoApp> {
           supportedLocales: const [Locale('es')],
           localizationsDelegates: GlobalMaterialLocalizations.delegates,
           routerConfig: _router,
-          builder: (context, child) => _OfflineFrame(child: child!),
+          builder: (context, child) => PrivacyCover(
+            onBackgrounded: widget.lockCubit.onBackgrounded,
+            onForegrounded: widget.lockCubit.onForegrounded,
+            child: _OfflineFrame(child: child!),
+          ),
         ),
       ),
     );

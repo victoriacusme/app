@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:nexo_bank/core/money/money.dart';
@@ -81,6 +83,21 @@ void main() {
         .thenThrow(Exception('sin permiso'));
 
     final result = await useCase(draft, idempotencyKey: 'k');
+
+    expect(result.isOk, isTrue);
+  });
+
+  test('no espera a la notificación (p. ej. el diálogo de permiso)', () async {
+    when(() => transfers.transferBetweenOwnAccounts(draft, idempotencyKey: 'k'))
+        .thenAnswer((_) async => Ok(_transfer));
+    final never = Completer<void>();
+    when(() => notifier.transferCompleted(any(), any()))
+        .thenAnswer((_) => never.future);
+
+    final result = await useCase(
+      draft,
+      idempotencyKey: 'k',
+    ).timeout(const Duration(seconds: 1));
 
     expect(result.isOk, isTrue);
   });

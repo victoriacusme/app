@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 
 import 'app/app.dart';
+import 'app/app_lock_cubit.dart';
 import 'app/app_settings_cubit.dart';
 import 'app/di.dart';
 import 'app/session_cubit.dart';
@@ -35,6 +36,9 @@ Future<void> main() async {
   final session = getIt<SessionCubit>();
   final connectivity = getIt<ConnectivityCubit>();
   final settings = getIt<AppSettingsCubit>();
+  final lock = getIt<AppLockCubit>();
+  // El bloqueo debe saber si hay biometría antes de restaurar la sesión.
+  await lock.init();
   unawaited(session.restore());
   unawaited(connectivity.start());
 
@@ -43,6 +47,7 @@ Future<void> main() async {
       sessionCubit: session,
       connectivityCubit: connectivity,
       settingsCubit: settings,
+      lockCubit: lock,
       deepLinks: notifications.taps,
       initialDeepLink: notifications.launchDeepLink,
     ),

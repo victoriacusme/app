@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../app/app_lock_cubit.dart';
 import '../../../app/session_cubit.dart';
 import '../../../design_system/design_system.dart';
 import '../domain/customer_profile.dart';
@@ -122,21 +123,21 @@ class _ProfileContent extends StatelessWidget {
                       width: double.infinity,
                       child: SegmentedButton<ThemePreference>(
                         key: const Key('profile_theme'),
+                        // Sin íconos: con 3 opciones el texto no cabe en
+                        // pantallas angostas (360 dp).
+                        showSelectedIcon: false,
                         segments: const [
                           ButtonSegment(
                             value: ThemePreference.light,
                             label: Text('Claro'),
-                            icon: Icon(Icons.light_mode_outlined),
                           ),
                           ButtonSegment(
                             value: ThemePreference.dark,
                             label: Text('Oscuro'),
-                            icon: Icon(Icons.dark_mode_outlined),
                           ),
                           ButtonSegment(
                             value: ThemePreference.system,
                             label: Text('Sistema'),
-                            icon: Icon(Icons.brightness_auto_outlined),
                           ),
                         ],
                         selected: {prefs.theme},
@@ -184,6 +185,7 @@ class _ProfileContent extends StatelessWidget {
             ],
           ),
         ),
+        const _BiometricSection(),
         const SizedBox(height: Spacing.lg),
         OutlinedButton.icon(
           key: const Key('profile_logout'),
@@ -192,6 +194,31 @@ class _ProfileContent extends StatelessWidget {
           label: const Text('Cerrar sesión'),
         ),
       ],
+    );
+  }
+}
+
+/// Preferencia local del dispositivo: pedir biometría al volver a entrar.
+class _BiometricSection extends StatelessWidget {
+  const _BiometricSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final lock = context.watch<AppLockCubit>().state;
+    if (!lock.available) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: Spacing.lg),
+      child: Card(
+        margin: EdgeInsets.zero,
+        child: SwitchListTile(
+          key: const Key('profile_biometrics'),
+          secondary: const Icon(Icons.fingerprint),
+          title: const Text('Ingresar con huella o rostro'),
+          subtitle: const Text('Solo en este dispositivo'),
+          value: lock.enabled,
+          onChanged: (v) => context.read<AppLockCubit>().setEnabled(enabled: v),
+        ),
+      ),
     );
   }
 }
