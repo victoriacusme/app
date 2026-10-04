@@ -1,5 +1,5 @@
 // Test de contrato contra ms-auth real. Se omite si no se define la URL:
-//   CONTRACT_BASE_URL=http://localhost:8081 flutter test test/contract
+//   CONTRACT_BASE_URL=http://localhost:8080 flutter test test/contract
 @Tags(['contract'])
 library;
 

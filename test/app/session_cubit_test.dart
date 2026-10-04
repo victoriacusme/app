@@ -13,15 +13,21 @@ class _MockLogout extends Mock implements Logout {}
 void main() {
   late _MockRestore restore;
   late _MockLogout logout;
+  late int clears;
   const session = Session(customerId: 'c-1');
 
   setUp(() {
     restore = _MockRestore();
     logout = _MockLogout();
+    clears = 0;
     when(() => logout()).thenAnswer((_) async {});
   });
 
-  SessionCubit build() => SessionCubit(restoreSession: restore, logout: logout);
+  SessionCubit build() => SessionCubit(
+    restoreSession: restore,
+    logout: logout,
+    clearUserData: () async => clears++,
+  );
 
   blocTest<SessionCubit, SessionState>(
     'restore con sesión guardada → autenticado',
@@ -40,12 +46,15 @@ void main() {
   );
 
   blocTest<SessionCubit, SessionState>(
-    'logout limpia y pasa a no autenticado',
+    'logout borra tokens y caché y pasa a no autenticado',
     build: build,
     seed: () => const SessionAuthenticated(session),
     act: (c) => c.logout(),
     expect: () => const [SessionUnauthenticated()],
-    verify: (_) => verify(() => logout()).called(1),
+    verify: (_) {
+      verify(() => logout()).called(1);
+      expect(clears, 1);
+    },
   );
 
   blocTest<SessionCubit, SessionState>(
@@ -56,5 +65,6 @@ void main() {
       ..sessionExpired()
       ..sessionExpired(),
     expect: () => const [SessionUnauthenticated(expired: true)],
+    verify: (_) => expect(clears, 1),
   );
 }

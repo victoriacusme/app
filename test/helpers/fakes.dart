@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:nexo_bank/core/security/auth_tokens.dart';
 import 'package:nexo_bank/core/security/token_store.dart';
+import 'package:nexo_bank/core/storage/encrypted_cache.dart';
 
 class InMemoryTokenStore implements TokenStore {
   InMemoryTokenStore([this.tokens]);
@@ -77,4 +78,28 @@ String fakeJwt(String sub) {
   String part(Map<String, Object> json) =>
       base64Url.encode(utf8.encode(jsonEncode(json))).replaceAll('=', '');
   return '${part({'alg': 'RS256'})}.${part({'sub': sub})}.firma';
+}
+
+class InMemoryCache implements KeyValueCache {
+  final entries = <String, CacheEntry>{};
+
+  @override
+  Future<CacheEntry?> read(String key) async => entries[key];
+
+  @override
+  Future<void> write(String key, Object? data, {DateTime? savedAt}) async =>
+      entries[key] = CacheEntry(
+        jsonDecode(jsonEncode(data)),
+        savedAt ?? DateTime.now(),
+      );
+
+  @override
+  Future<void> delete(String key) async => entries.remove(key);
+
+  @override
+  Future<void> deleteWhere(bool Function(String key) test) async =>
+      entries.removeWhere((key, _) => test(key));
+
+  @override
+  Future<void> clear() async => entries.clear();
 }

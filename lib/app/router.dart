@@ -4,22 +4,21 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/accounts/presentation/bloc/accounts_bloc.dart';
+import '../features/accounts/presentation/bloc/movements_bloc.dart';
+import '../features/accounts/presentation/pages/home_page.dart';
+import '../features/accounts/presentation/pages/movements_page.dart';
 import '../features/auth/presentation/bloc/login_bloc.dart';
 import '../features/auth/presentation/pages/login_page.dart';
+import '../features/transfers/presentation/bloc/own_transfer_bloc.dart';
+import '../features/transfers/presentation/pages/transfer_page.dart';
 import 'di.dart';
-import 'pages/home_placeholder_page.dart';
 import 'pages/placeholder_page.dart';
 import 'pages/splash_page.dart';
+import 'routes.dart';
 import 'session_cubit.dart';
 
-abstract final class Routes {
-  static const splash = '/splash';
-  static const login = '/login';
-  static const home = '/home';
-  static const transfer = '/transfer';
-  static const profile = '/profile';
-  static String account(String id) => '/accounts/$id';
-}
+export 'routes.dart';
 
 GoRouter createRouter(SessionCubit session) {
   return GoRouter(
@@ -38,16 +37,42 @@ GoRouter createRouter(SessionCubit session) {
       ),
       GoRoute(
         path: Routes.home,
-        builder: (_, _) => const HomePlaceholderPage(),
+        builder: (_, _) => BlocProvider(
+          create: (_) => getIt<AccountsBloc>()..add(const AccountsRequested()),
+          child: const HomePage(),
+        ),
       ),
       GoRoute(
         path: '/accounts/:id',
-        builder: (_, state) =>
-            PlaceholderPage(title: 'Cuenta ${state.pathParameters['id']}'),
+        builder: (_, state) {
+          final id = state.pathParameters['id']!;
+          return MultiBlocProvider(
+            providers: [
+              BlocProvider(
+                create: (_) =>
+                    getIt<AccountsBloc>()..add(const AccountsRequested()),
+              ),
+              BlocProvider(
+                create: (_) =>
+                    getIt<MovementsBloc>(param1: id)
+                      ..add(const MovementsRequested()),
+              ),
+            ],
+            child: MovementsPage(accountId: id),
+          );
+        },
       ),
       GoRoute(
         path: Routes.transfer,
-        builder: (_, _) => const PlaceholderPage(title: 'Transferir'),
+        builder: (_, state) => BlocProvider(
+          create: (_) => getIt<OwnTransferBloc>()
+            ..add(
+              TransferStarted(
+                sourceAccountId: state.uri.queryParameters['from'],
+              ),
+            ),
+          child: const TransferPage(),
+        ),
       ),
       GoRoute(
         path: Routes.profile,

@@ -1,10 +1,13 @@
 import 'package:dio/dio.dart';
 
 import '../result/failure.dart';
+import 'interceptors/circuit_breaker_interceptor.dart';
 import 'interceptors/correlation_id_interceptor.dart';
 
 /// Traduce errores de red y `ProblemDetail` (RFC 7807) a [Failure].
 abstract final class ErrorMapper {
+  static const circuitOpenCode = 'circuit-open';
+
   static Failure from(Object error) => switch (error) {
     DioException() => fromDio(error),
     _ => const ServerFailure(),
@@ -13,6 +16,16 @@ abstract final class ErrorMapper {
   static Failure fromDio(DioException e) {
     final correlationId =
         e.requestOptions.headers[CorrelationIdInterceptor.header] as String?;
+    if (e.error is CircuitOpenException) {
+      return ServerFailure(
+        code: circuitOpenCode,
+        statusCode: 503,
+        message:
+            'El servicio no está disponible en este momento. '
+            'Lo intentaremos de nuevo en unos segundos.',
+        correlationId: correlationId,
+      );
+    }
     return switch (e.type) {
       DioExceptionType.connectionTimeout ||
       DioExceptionType.sendTimeout ||

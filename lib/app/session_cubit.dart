@@ -38,11 +38,15 @@ final class SessionUnauthenticated extends SessionState {
 
 /// Estado global de la sesión. El router redirige según este estado.
 class SessionCubit extends Cubit<SessionState> {
-  SessionCubit({required this._restoreSession, required this._logout})
-    : super(const SessionUnknown());
+  SessionCubit({
+    required this._restoreSession,
+    required this._logout,
+    required this._clearUserData,
+  }) : super(const SessionUnknown());
 
   final RestoreSession _restoreSession;
   final Logout _logout;
+  final Future<void> Function() _clearUserData;
 
   Future<void> restore() async {
     final session = await _restoreSession();
@@ -57,13 +61,14 @@ class SessionCubit extends Cubit<SessionState> {
 
   Future<void> logout() async {
     await _logout();
+    await _clearUserData();
     emit(const SessionUnauthenticated());
   }
 
   /// Lo invoca el `RefreshTokenInterceptor` cuando el refresh falla.
-  void sessionExpired() {
-    if (state is SessionAuthenticated) {
-      emit(const SessionUnauthenticated(expired: true));
-    }
+  Future<void> sessionExpired() async {
+    if (state is! SessionAuthenticated) return;
+    emit(const SessionUnauthenticated(expired: true));
+    await _clearUserData();
   }
 }

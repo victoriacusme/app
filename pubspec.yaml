@@ -20,6 +20,9 @@ dependencies:
   hive_ce_flutter: ^2.4.0
   intl: ^0.20.3
   uuid: ^4.6.0
+  bloc_concurrency: ^0.3.0
+  flutter_localizations:
+    sdk: flutter
 
 dev_dependencies:
   flutter_test:
