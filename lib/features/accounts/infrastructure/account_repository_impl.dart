@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import '../../../core/data/snapshot.dart';
+import '../../../core/data/stale_while_revalidate.dart';
 import '../../../core/network/error_mapper.dart';
 import '../../../core/result/result.dart';
-import '../../../core/storage/encrypted_cache.dart';
 import '../domain/account.dart';
 import '../domain/account_repository.dart';
 import '../domain/movement.dart';
@@ -28,11 +28,12 @@ class AccountRepositoryImpl implements AccountRepository {
 
   @override
   Stream<Result<Snapshot<List<Account>>>> watchAccounts() =>
-      _staleWhileRevalidate(
+      staleWhileRevalidate(
         readCache: _local.readAccounts,
         fetch: _remote.getAccounts,
         save: _local.saveAccounts,
         map: AccountDtos.accountList,
+        now: _now,
       );
 
   @override
@@ -47,11 +48,12 @@ class AccountRepositoryImpl implements AccountRepository {
       return;
     }
     final code = (currency as Ok<String>).value;
-    yield* _staleWhileRevalidate(
+    yield* staleWhileRevalidate(
       readCache: () => _local.readMovements(accountId),
       fetch: () => _remote.getMovements(accountId),
       save: (json) => _local.saveMovements(accountId, json),
       map: (json) => AccountDtos.movementPage(json, currency: code),
+      now: _now,
     );
   }
 
@@ -93,44 +95,6 @@ class AccountRepositoryImpl implements AccountRepository {
       return Ok(json['currency'] as String);
     } catch (e) {
       return Err(ErrorMapper.from(e));
-    }
-  }
-
-  /// 1. Si hay caché, la emite (`fromCache: true`).
-  /// 2. Pide el dato remoto: si llega, lo guarda y lo emite.
-  /// 3. Si falla: con caché, re-emite la caché con `refreshFailure`;
-  ///    sin caché, emite el error.
-  Stream<Result<Snapshot<T>>> _staleWhileRevalidate<T>({
-    required Future<CacheEntry?> Function() readCache,
-    required Future<Map<String, dynamic>> Function() fetch,
-    required Future<void> Function(Map<String, dynamic>) save,
-    required T Function(Map<String, dynamic>) map,
-  }) async* {
-    Snapshot<T>? cached;
-    try {
-      final entry = await readCache();
-      if (entry?.data case final Map<String, dynamic> json) {
-        cached = Snapshot(
-          data: map(json),
-          updatedAt: entry!.savedAt,
-          fromCache: true,
-        );
-      }
-    } catch (_) {
-      cached = null; // caché corrupta o de un formato anterior: se ignora
-    }
-    if (cached != null) yield Ok(cached);
-
-    try {
-      final json = await fetch();
-      final fresh = Snapshot(data: map(json), updatedAt: _now());
-      await save(json);
-      yield Ok(fresh);
-    } catch (e) {
-      final failure = ErrorMapper.from(e);
-      yield cached == null
-          ? Err(failure)
-          : Ok(cached.withRefreshFailure(failure));
     }
   }
 

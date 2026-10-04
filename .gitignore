@@ -55,3 +55,6 @@ ios/Pods/
 ios/.symlinks/
 android/.gradle/
 android/local.properties
+
+# Diferencias de golden tests fallidos
+**/failures/

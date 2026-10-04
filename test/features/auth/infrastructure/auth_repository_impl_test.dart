@@ -4,6 +4,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:nexo_bank/core/result/failure.dart';
 import 'package:nexo_bank/core/result/result.dart';
 import 'package:nexo_bank/core/security/device_id_provider.dart';
+import 'package:nexo_bank/features/auth/domain/registration.dart';
 import 'package:nexo_bank/features/auth/domain/session.dart';
 import 'package:nexo_bank/features/auth/infrastructure/auth_remote_data_source.dart';
 import 'package:nexo_bank/features/auth/infrastructure/auth_repository_impl.dart';
@@ -88,6 +89,32 @@ void main() {
         expect(store.tokens, isNull);
       },
     );
+  });
+
+  group('register', () {
+    test('crea la cuenta, guarda los tokens y devuelve la sesión', () async {
+      final data = Registration(
+        fullName: 'Ana Pérez',
+        idNumber: '0102030405',
+        birthDate: DateTime(1995, 5, 10),
+        email: 'ana@nexo.ec',
+        phone: '0991234567',
+        username: 'ana.perez',
+        password: 'Clave2026x',
+      );
+      when(() => remote.register(data, deviceId: 'device-1')).thenAnswer(
+        (_) async => TokenResponseDto(
+          accessToken: fakeJwt('nuevo'),
+          refreshToken: 'refresh-n',
+          expiresIn: 900,
+        ),
+      );
+
+      final result = await repository.register(data);
+
+      expect((result as Ok<Session>).value.customerId, 'nuevo');
+      expect(store.tokens?.refreshToken, 'refresh-n');
+    });
   });
 
   group('logout', () {

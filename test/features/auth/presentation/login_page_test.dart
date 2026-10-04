@@ -130,6 +130,12 @@ void main() {
     verify(() => sessionCubit.authenticated(session)).called(1);
   });
 
+  testWidgets('ofrece crear una cuenta', (tester) async {
+    await pump(tester);
+
+    expect(find.byKey(const Key('login_create_account')), findsOneWidget);
+  });
+
   testWidgets('si la sesión expiró lo indica', (tester) async {
     when(() => sessionCubit.state)
         .thenReturn(const SessionUnauthenticated(expired: true));

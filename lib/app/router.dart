@@ -6,14 +6,19 @@ import 'package:go_router/go_router.dart';
 
 import '../features/accounts/presentation/bloc/accounts_bloc.dart';
 import '../features/accounts/presentation/bloc/movements_bloc.dart';
-import '../features/accounts/presentation/pages/home_page.dart';
 import '../features/accounts/presentation/pages/movements_page.dart';
 import '../features/auth/presentation/bloc/login_bloc.dart';
+import '../features/auth/presentation/onboarding/onboarding_cubit.dart';
+import '../features/auth/presentation/onboarding/onboarding_page.dart';
 import '../features/auth/presentation/pages/login_page.dart';
+import '../features/customer/presentation/profile_bloc.dart';
+import '../features/customer/presentation/profile_page.dart';
+import '../features/experience/presentation/experience_cubit.dart';
+import '../features/experience/presentation/home_page.dart';
+import '../features/fx/presentation/fx_cubit.dart';
 import '../features/transfers/presentation/bloc/own_transfer_bloc.dart';
 import '../features/transfers/presentation/pages/transfer_page.dart';
 import 'di.dart';
-import 'pages/placeholder_page.dart';
 import 'pages/splash_page.dart';
 import 'routes.dart';
 import 'session_cubit.dart';
@@ -36,9 +41,18 @@ GoRouter createRouter(SessionCubit session) {
         ),
       ),
       GoRoute(
-        path: Routes.home,
+        path: Routes.register,
         builder: (_, _) => BlocProvider(
-          create: (_) => getIt<AccountsBloc>()..add(const AccountsRequested()),
+          create: (_) => getIt<OnboardingCubit>(),
+          child: const OnboardingPage(),
+        ),
+      ),
+      GoRoute(
+        path: Routes.home,
+        builder: (_, _) => HomeScope(
+          experience: () => getIt<ExperienceCubit>(),
+          accounts: () => getIt<AccountsBloc>(),
+          fx: () => getIt<FxCubit>(),
           child: const HomePage(),
         ),
       ),
@@ -76,17 +90,24 @@ GoRouter createRouter(SessionCubit session) {
       ),
       GoRoute(
         path: Routes.profile,
-        builder: (_, _) => const PlaceholderPage(title: 'Perfil'),
+        builder: (_, _) => BlocProvider(
+          create: (_) => getIt<ProfileBloc>()..add(const ProfileRequested()),
+          child: const ProfilePage(),
+        ),
       ),
     ],
   );
 }
 
 String? _redirect(SessionState session, String location) {
-  final isPublic = location == Routes.login || location == Routes.splash;
+  const publicRoutes = {Routes.splash, Routes.login, Routes.register};
+  final isPublic = publicRoutes.contains(location);
   return switch (session) {
     SessionUnknown() => location == Routes.splash ? null : Routes.splash,
-    SessionUnauthenticated() => location == Routes.login ? null : Routes.login,
+    SessionUnauthenticated() =>
+      location == Routes.login || location == Routes.register
+          ? null
+          : Routes.login,
     SessionAuthenticated() => isPublic ? Routes.home : null,
   };
 }

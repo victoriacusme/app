@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../app/session_cubit.dart';
 import '../../../../design_system/design_system.dart';
 import '../bloc/login_bloc.dart';
+import '../onboarding/onboarding_page.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -135,6 +136,8 @@ class _LoginFormState extends State<_LoginForm> {
                   loading: state.isSubmitting,
                   onPressed: _submit,
                 ),
+                const SizedBox(height: Spacing.sm),
+                const CreateAccountLink(),
               ],
             ),
           ),

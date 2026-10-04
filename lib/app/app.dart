@@ -1,10 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/connectivity/connectivity_cubit.dart';
+import '../core/navigation/deep_links.dart';
 import '../design_system/design_system.dart';
+import 'app_settings_cubit.dart';
 import 'router.dart';
 import 'session_cubit.dart';
 
@@ -12,11 +16,22 @@ class NexoApp extends StatefulWidget {
   const NexoApp({
     required this.sessionCubit,
     required this.connectivityCubit,
+    required this.settingsCubit,
+    this.deepLinks = const Stream.empty(),
+    this.initialDeepLink,
     super.key,
   });
 
   final SessionCubit sessionCubit;
   final ConnectivityCubit connectivityCubit;
+  final AppSettingsCubit settingsCubit;
+
+  /// Deep links que llegan mientras la app corre (p. ej. al tocar una
+  /// notificación).
+  final Stream<String> deepLinks;
+
+  /// Deep link con el que se abrió la app en frío.
+  final String? initialDeepLink;
 
   @override
   State<NexoApp> createState() => _NexoAppState();
@@ -24,9 +39,40 @@ class NexoApp extends StatefulWidget {
 
 class _NexoAppState extends State<NexoApp> {
   late final GoRouter _router = createRouter(widget.sessionCubit);
+  late final StreamSubscription<String> _links;
+  late final StreamSubscription<SessionState> _session;
+
+  /// Ruta pendiente hasta que haya sesión (el login va primero).
+  String? _pending;
+
+  @override
+  void initState() {
+    super.initState();
+    _pending = _routeOf(widget.initialDeepLink);
+    _links = widget.deepLinks.listen((link) {
+      _pending = _routeOf(link);
+      _openPending();
+    });
+    _session = widget.sessionCubit.stream.listen((_) => _openPending());
+  }
+
+  static String? _routeOf(String? link) =>
+      link == null ? null : DeepLinks.routeFor(link);
+
+  void _openPending() {
+    final route = _pending;
+    if (route == null || widget.sessionCubit.state is! SessionAuthenticated) {
+      return;
+    }
+    _pending = null;
+    // Se espera a que el router aplique la redirección al home.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _router.push(route));
+  }
 
   @override
   void dispose() {
+    unawaited(_links.cancel());
+    unawaited(_session.cancel());
     _router.dispose();
     super.dispose();
   }
@@ -37,17 +83,22 @@ class _NexoAppState extends State<NexoApp> {
       providers: [
         BlocProvider.value(value: widget.sessionCubit),
         BlocProvider.value(value: widget.connectivityCubit),
+        BlocProvider.value(value: widget.settingsCubit),
       ],
-      child: MaterialApp.router(
-        title: 'Nexo Bank',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light(),
-        darkTheme: AppTheme.dark(),
-        locale: const Locale('es'),
-        supportedLocales: const [Locale('es')],
-        localizationsDelegates: GlobalMaterialLocalizations.delegates,
-        routerConfig: _router,
-        builder: (context, child) => _OfflineFrame(child: child!),
+      child: BlocBuilder<AppSettingsCubit, AppSettings>(
+        buildWhen: (a, b) => a.themeMode != b.themeMode,
+        builder: (context, settings) => MaterialApp.router(
+          title: 'Nexo Bank',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light(),
+          darkTheme: AppTheme.dark(),
+          themeMode: settings.themeMode,
+          locale: const Locale('es'),
+          supportedLocales: const [Locale('es')],
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          routerConfig: _router,
+          builder: (context, child) => _OfflineFrame(child: child!),
+        ),
       ),
     );
   }

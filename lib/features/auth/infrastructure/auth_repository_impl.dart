@@ -3,6 +3,7 @@ import '../../../core/result/result.dart';
 import '../../../core/security/device_id_provider.dart';
 import '../../../core/security/token_store.dart';
 import '../domain/auth_repository.dart';
+import '../domain/registration.dart';
 import '../domain/session.dart';
 import 'auth_remote_data_source.dart';
 import 'jwt_claims.dart';
@@ -29,6 +30,17 @@ class AuthRepositoryImpl implements AuthRepository {
         password: password,
         deviceId: await _deviceId.get(),
       );
+      await _tokenStore.save(dto.toTokens());
+      return Ok(Session(customerId: JwtClaims.subject(dto.accessToken)));
+    } catch (e) {
+      return Err(ErrorMapper.from(e));
+    }
+  }
+
+  @override
+  Future<Result<Session>> register(Registration data) async {
+    try {
+      final dto = await _remote.register(data, deviceId: await _deviceId.get());
       await _tokenStore.save(dto.toTokens());
       return Ok(Session(customerId: JwtClaims.subject(dto.accessToken)));
     } catch (e) {

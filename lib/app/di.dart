@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:uuid/uuid.dart';
@@ -18,17 +19,35 @@ import '../features/accounts/presentation/bloc/accounts_bloc.dart';
 import '../features/accounts/presentation/bloc/movements_bloc.dart';
 import '../features/auth/application/login.dart';
 import '../features/auth/application/logout.dart';
+import '../features/auth/application/register.dart';
 import '../features/auth/application/restore_session.dart';
 import '../features/auth/domain/auth_repository.dart';
 import '../features/auth/infrastructure/auth_remote_data_source.dart';
 import '../features/auth/infrastructure/auth_repository_impl.dart';
 import '../features/auth/presentation/bloc/login_bloc.dart';
+import '../features/auth/presentation/onboarding/onboarding_cubit.dart';
+import '../features/customer/application/update_preferences.dart';
+import '../features/customer/application/watch_profile.dart';
+import '../features/customer/domain/customer_repository.dart';
+import '../features/customer/infrastructure/customer_remote_data_source.dart';
+import '../features/customer/infrastructure/customer_repository_impl.dart';
+import '../features/customer/presentation/profile_bloc.dart';
+import '../features/experience/domain/experience_repository.dart';
+import '../features/experience/infrastructure/experience_repository_impl.dart';
+import '../features/experience/presentation/experience_cubit.dart';
+import '../features/fx/domain/fx_repository.dart';
+import '../features/fx/infrastructure/fx_repository_impl.dart';
+import '../features/fx/presentation/fx_cubit.dart';
+import '../features/notifications/application/local_transfer_notifier.dart';
+import '../features/notifications/infrastructure/local_notifications_service.dart';
 import '../features/transfers/application/get_own_accounts.dart';
 import '../features/transfers/application/transfer_between_own_accounts.dart';
+import '../features/transfers/domain/transfer_notifier.dart';
 import '../features/transfers/domain/transfer_repository.dart';
 import '../features/transfers/infrastructure/transfer_remote_data_source.dart';
 import '../features/transfers/infrastructure/transfer_repository_impl.dart';
 import '../features/transfers/presentation/bloc/own_transfer_bloc.dart';
+import 'app_settings_cubit.dart';
 import 'session_cubit.dart';
 
 final getIt = GetIt.instance;
@@ -39,6 +58,7 @@ void configureDependencies({
   required FlutterSecureStorage storage,
   required KeyValueCache cache,
   required ConnectivitySource connectivity,
+  required LocalNotificationsService notifications,
 }) {
   // Core
   getIt
@@ -46,6 +66,7 @@ void configureDependencies({
     ..registerSingleton(cache)
     ..registerLazySingleton<TokenStore>(() => SecureTokenStore(getIt()))
     ..registerLazySingleton(() => DeviceIdProvider(getIt()))
+    ..registerSingleton(notifications)
     ..registerLazySingleton(() => ConnectivityCubit(connectivity))
     ..registerLazySingleton<Dio>(
       () => createDioClient(
@@ -71,7 +92,9 @@ void configureDependencies({
     ..registerLazySingleton(() => Login(getIt()))
     ..registerLazySingleton(() => Logout(getIt()))
     ..registerLazySingleton(() => RestoreSession(getIt()))
-    ..registerFactory(() => LoginBloc(getIt()));
+    ..registerLazySingleton(() => Register(getIt()))
+    ..registerFactory(() => LoginBloc(getIt()))
+    ..registerFactory(() => OnboardingCubit(getIt()));
 
   // Accounts
   getIt
@@ -94,7 +117,15 @@ void configureDependencies({
       () => TransferRepositoryImpl(getIt()),
     )
     ..registerLazySingleton(() => GetOwnAccounts(getIt()))
-    ..registerLazySingleton(() => TransferBetweenOwnAccounts(getIt(), getIt()))
+    ..registerLazySingleton<TransferNotifier>(
+      () => LocalTransferNotifier(
+        service: getIt(),
+        isEnabled: () => getIt<AppSettingsCubit>().state.notificationsEnabled,
+      ),
+    )
+    ..registerLazySingleton(
+      () => TransferBetweenOwnAccounts(getIt(), getIt(), getIt()),
+    )
     ..registerFactory(
       () => OwnTransferBloc(
         getOwnAccounts: getIt(),
@@ -103,7 +134,36 @@ void configureDependencies({
       ),
     );
 
+  // Customer
+  getIt
+    ..registerLazySingleton(() => CustomerRemoteDataSource(getIt()))
+    ..registerLazySingleton<CustomerRepository>(
+      () => CustomerRepositoryImpl(remote: getIt(), cache: getIt()),
+    )
+    ..registerLazySingleton(() => WatchProfile(getIt()))
+    ..registerLazySingleton(() => UpdatePreferences(getIt()))
+    ..registerFactory(() => ProfileBloc(getIt(), getIt()));
+
+  // Experience (SDUI) y tipo de cambio
+  getIt
+    ..registerLazySingleton<ExperienceRepository>(
+      () => ExperienceRepositoryImpl(
+        dio: getIt(),
+        cache: getIt(),
+        loadFallback: () =>
+            rootBundle.loadString('assets/experience/home_fallback.json'),
+      ),
+    )
+    ..registerFactory(() => ExperienceCubit(getIt()))
+    ..registerLazySingleton<FxRepository>(
+      () => FxRepositoryImpl(dio: getIt(), cache: getIt()),
+    )
+    ..registerFactory(() => FxCubit(getIt()));
+
   // App
+  getIt.registerLazySingleton(
+    () => AppSettingsCubit(session: getIt(), customers: getIt()),
+  );
   getIt.registerLazySingleton(
     () => SessionCubit(
       restoreSession: getIt(),

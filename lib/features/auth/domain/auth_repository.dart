@@ -1,4 +1,5 @@
 import '../../../core/result/result.dart';
+import 'registration.dart';
 import 'session.dart';
 
 /// Puerto de autenticación.
@@ -7,6 +8,10 @@ abstract interface class AuthRepository {
     required String username,
     required String password,
   });
+
+  /// Crea la cuenta (cliente, cuenta de ahorros y credenciales) y deja la
+  /// sesión iniciada.
+  Future<Result<Session>> register(Registration data);
 
   /// Cierra la sesión en el backend (best effort) y borra los tokens locales.
   Future<void> logout();

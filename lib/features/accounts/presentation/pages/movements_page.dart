@@ -55,6 +55,7 @@ class _MovementsPageState extends State<MovementsPage> {
               !s.fromCache ||
               s.refreshFailure != null ||
               s.status == MovementsStatus.failure,
+          orElse: () => movements.state,
         )
         .timeout(const Duration(seconds: 30), onTimeout: () => movements.state);
   }
