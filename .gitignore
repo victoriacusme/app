@@ -1,0 +1,33 @@
+# --- General ---
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.iml
+
+# --- Flutter / Dart ---
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+coverage/
+ios/Pods/
+ios/.symlinks/
+android/.gradle/
+android/local.properties
+
+# --- Secretos ---
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+*.jks
+*.keystore
+*.p12
+# Widget Preview related
+.widget_preview/
