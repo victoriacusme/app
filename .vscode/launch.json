@@ -1,0 +1,19 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Nexo · dev (emulador)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": ["--dart-define-from-file=config/dev.json"]
+    },
+    {
+      "name": "Nexo · staging (cualquier teléfono)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": ["--dart-define-from-file=config/staging.json"]
+    }
+  ]
+}

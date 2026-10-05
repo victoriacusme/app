@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Solo en debug: permite HTTP sin TLS para probar contra el backend local,
+     tanto en el emulador (10.0.2.2) como en un teléfono físico que llega a la
+     PC por la red local (p. ej. http://192.168.0.14:8080).
+     Release usa la configuración por defecto: solo HTTPS. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>
