@@ -27,6 +27,8 @@ dependencies:
   pointycastle: ^4.0.0
   local_auth: ^3.0.2
   device_info_plus: ^13.3.0
+  firebase_core: ^4.15.0
+  firebase_messaging: ^16.7.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

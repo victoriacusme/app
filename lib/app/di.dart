@@ -43,10 +43,12 @@ import '../features/experience/presentation/experience_cubit.dart';
 import '../features/fx/domain/fx_repository.dart';
 import '../features/fx/infrastructure/fx_repository_impl.dart';
 import '../features/fx/presentation/fx_cubit.dart';
+import '../features/notifications/application/foreground_push_presenter.dart';
 import '../features/notifications/application/local_transfer_notifier.dart';
 import '../features/notifications/application/push_registration.dart';
 import '../features/notifications/domain/push_token_source.dart';
 import '../features/notifications/infrastructure/device_remote_data_source.dart';
+import '../features/notifications/infrastructure/firebase_push_service.dart';
 import '../features/notifications/infrastructure/local_notifications_service.dart';
 import '../features/transfers/application/get_own_accounts.dart';
 import '../features/transfers/application/get_transfer_detail.dart';
@@ -64,13 +66,20 @@ import 'session_cubit.dart';
 
 final getIt = GetIt.instance;
 
+DevicePlatform currentDevicePlatform() =>
+    defaultTargetPlatform == TargetPlatform.iOS
+    ? DevicePlatform.ios
+    : DevicePlatform.android;
+
 /// [cache] y [connectivity] se crean antes (en `main`) porque su
-/// inicialización es asíncrona o depende de la plataforma.
+/// inicialización es asíncrona o depende de la plataforma. [push] es `null`
+/// si el proyecto no tiene Firebase configurado.
 void configureDependencies({
   required FlutterSecureStorage storage,
   required KeyValueCache cache,
   required ConnectivitySource connectivity,
   required LocalNotificationsService notifications,
+  FirebasePushService? push,
 }) {
   // Core
   getIt
@@ -145,13 +154,22 @@ void configureDependencies({
     ..registerLazySingleton(() => DeviceRemoteDataSource(getIt()))
     ..registerLazySingleton<PushTokenSource>(
       // Sin Firebase configurado no hay token (ver NoPushTokenSource).
-      () => NoPushTokenSource(
-        defaultTargetPlatform == TargetPlatform.iOS
-            ? DevicePlatform.ios
-            : DevicePlatform.android,
+      () => push ?? NoPushTokenSource(currentDevicePlatform()),
+    )
+    ..registerLazySingleton(
+      () => PushRegistration(
+        getIt(),
+        getIt(),
+        tokenRefreshes: push?.tokenRefreshes,
       ),
     )
-    ..registerLazySingleton(() => PushRegistration(getIt(), getIt()))
+    ..registerLazySingleton(
+      () => ForegroundPushPresenter(
+        service: getIt(),
+        isEnabled: () => getIt<AppSettingsCubit>().state.notificationsEnabled,
+        l10n: () => lookupAppLocalizations(Locale(AppLanguages.device())),
+      ),
+    )
     ..registerLazySingleton<TransferNotifier>(
       () => LocalTransferNotifier(
         service: getIt(),

@@ -15,3 +15,4 @@ el contexto, la decisión, las alternativas que se descartaron y sus costos.
 | [0008](0008-login-con-jwe.md) | Credenciales cifradas con JWE en el login | Aceptada |
 | [0009](0009-certificate-pinning-spki.md) | Certificate pinning por clave pública (SPKI) | Aceptada |
 | [0010](0010-biometria-y-privacidad.md) | Biometría local para volver a entrar y pantalla de privacidad | Aceptada |
+| [0011](0011-push-con-firebase-opcional.md) | Notificaciones push con Firebase, opcional por entorno | Aceptada |

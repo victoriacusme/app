@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nexo_bank/features/notifications/application/push_registration.dart';
@@ -51,6 +53,32 @@ void main() {
 
     expect(adapter.requests, isEmpty);
   });
+
+  test(
+    'un token rotado por FCM se vuelve a registrar hasta cerrar sesión',
+    () async {
+      final refreshes = StreamController<String>.broadcast();
+      final registration = PushRegistration(
+        _FixedToken('t1'),
+        remote,
+        tokenRefreshes: refreshes.stream,
+      );
+
+      await registration.register();
+      refreshes.add('t2');
+      await pumpEventQueue();
+      await registration.unregister();
+      refreshes.add('t3');
+      await pumpEventQueue();
+
+      final registered = adapter.requests
+          .where((r) => r.method == 'PUT')
+          .map((r) => (r.data as Map<String, dynamic>)['token'])
+          .toList();
+      expect(registered, ['t1', 't2']);
+      await refreshes.close();
+    },
+  );
 
   test('un error del backend no interrumpe el login', () async {
     adapter.handler = (_) async => const FakeResponse(503);

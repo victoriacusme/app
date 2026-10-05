@@ -194,11 +194,31 @@ Para agregar un texto: añadirlo en ambos `.arb` y usar `context.l10n.clave`.
 
 ## Notificaciones
 
-Tras una transferencia exitosa se muestra una notificación local (si el
-cliente las tiene activadas en su perfil). Tocarla abre la cuenta de origen,
-también con la app cerrada. El contenido se oculta en la pantalla de
-bloqueo. Push remoto (FCM) requiere un proyecto de Firebase y no está
-configurado.
+Tras una transferencia, ms-customer envía una **push con Firebase Cloud
+Messaging**: llega con la app cerrada, en segundo plano o abierta, e incluso
+si la transferencia se hizo desde otro dispositivo. Tocarla abre el detalle
+de la transferencia. Si el cliente desactiva las notificaciones en su
+perfil, no se envía. El contenido se oculta en la pantalla de bloqueo.
+
+Firebase es **opcional** ([ADR 0011](docs/adr/0011-push-con-firebase-opcional.md)):
+sin configurarlo, la app compila igual y muestra un aviso local tras cada
+transferencia hecha en ella.
+
+Para activar la push (una vez, unos 10 minutos):
+
+1. En [Firebase Console](https://console.firebase.google.com) crear un
+   proyecto y agregar una app **Android** con el paquete `ec.nexo.nexo_bank`.
+2. Descargar `google-services.json` y copiarlo en `android/app/` (está en
+   `.gitignore`).
+3. En el proyecto: *Configuración → Cuentas de servicio → Generar nueva
+   clave privada*. Guardar el JSON en
+   `app-backend/secrets/firebase-adminsdk.json` y en `app-backend/.env`:
+   `FCM_CREDENTIALS_FILE=/run/secrets/nexo/firebase-adminsdk.json`.
+4. `docker compose up -d ms-customer` (en `app-backend`) y `flutter run`.
+
+Para probarla: iniciar sesión (acepta el permiso), cerrar la app y hacer una
+transferencia desde otro lado, por ejemplo con `curl` al gateway
+(ver el README del backend). La notificación llega a la bandeja.
 
 ## Resiliencia
 

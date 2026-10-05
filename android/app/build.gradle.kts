@@ -4,6 +4,12 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Firebase es opcional: sin google-services.json (CI, otros equipos) la app
+// compila igual y usa solo notificaciones locales. Ver docs/adr/0011.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 android {
     namespace = "ec.nexo.nexo_bank"
     compileSdk = flutter.compileSdkVersion
