@@ -23,6 +23,8 @@ import 'package:nexo_bank/features/accounts/infrastructure/accounts_local_data_s
 import 'package:nexo_bank/features/accounts/infrastructure/accounts_remote_data_source.dart';
 import 'package:nexo_bank/features/auth/infrastructure/auth_remote_data_source.dart';
 import 'package:nexo_bank/features/auth/infrastructure/auth_repository_impl.dart';
+import 'package:nexo_bank/features/notifications/domain/push_token_source.dart';
+import 'package:nexo_bank/features/notifications/infrastructure/device_remote_data_source.dart';
 import 'package:nexo_bank/features/transfers/domain/transfer.dart';
 import 'package:nexo_bank/features/transfers/infrastructure/transfer_remote_data_source.dart';
 import 'package:uuid/uuid.dart';
@@ -175,5 +177,16 @@ void main() {
       ),
       idempotencyKey: const Uuid().v4(),
     );
+  }, skip: skip);
+
+  test('registro y baja del token de push del dispositivo', () async {
+    final remote = DeviceRemoteDataSource(dio);
+    const token = 'contract-test-token';
+
+    await remote.register(token, DevicePlatform.android);
+    // PUT es idempotente: repetirlo no falla.
+    await remote.register(token, DevicePlatform.android);
+    await remote.unregister(token);
+    await remote.unregister(token);
   }, skip: skip);
 }

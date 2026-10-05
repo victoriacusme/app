@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/navigation/deep_links.dart';
 import '../../../../design_system/design_system.dart';
+import '../../../../l10n/l10n.dart';
 import '../../domain/experience_layout.dart';
+import '../localized_text.dart';
 
 class PromoBannerComponent extends StatelessWidget {
   const PromoBannerComponent({
@@ -15,21 +18,43 @@ class PromoBannerComponent extends StatelessWidget {
 
   factory PromoBannerComponent.fromSpec(ComponentSpec spec) =>
       PromoBannerComponent(
-        title: spec.properties['title'] as String,
-        subtitle: spec.properties['subtitle'] as String?,
+        title: LocalizedText.parse(spec.properties['title']),
+        subtitle: LocalizedText.tryParse(spec.properties['subtitle']),
         imageUrl: spec.properties['imageUrl'] as String?,
         deeplink: spec.properties['deeplink'] as String?,
       );
 
-  final String title;
-  final String? subtitle;
+  final LocalizedText title;
+  final LocalizedText? subtitle;
   final String? imageUrl;
   final String? deeplink;
+
+  /// Las promociones conocidas (por su destino) usan el texto traducido de
+  /// la app. Una campaña nueva que la app aún no conoce muestra el texto del
+  /// backend (o el de su idioma, si llega por idioma).
+  (String, String?) texts(AppLocalizations l10n) {
+    final amount = NumberFormat('#,##0', l10n.localeName).format(5000);
+    return switch (deeplink) {
+      'app://savings' => (l10n.promoSavingsTitle, l10n.promoSavingsSubtitle),
+      'app://advisor' => (l10n.promoAdvisorTitle, l10n.promoAdvisorSubtitle),
+      'app://credit' => (
+        l10n.promoCreditTitle,
+        l10n.promoCreditSubtitle('\$$amount'),
+      ),
+      'app://transfers' => (
+        l10n.promoTransfersTitle,
+        l10n.promoTransfersSubtitle,
+      ),
+      _ => (title.resolve(l10n.localeName), subtitle?.resolve(l10n.localeName)),
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final (title, subtitle) = texts(l10n);
     // Fondo de marca: se ve mientras carga la imagen o si falla.
     final placeholder = DecoratedBox(
       decoration: BoxDecoration(
@@ -40,7 +65,9 @@ class PromoBannerComponent extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: Spacing.md),
       child: Semantics(
         button: deeplink != null,
-        label: 'Promoción: $title${subtitle == null ? '' : '. $subtitle'}',
+        label: l10n.promoSemantics(
+          subtitle == null ? title : '$title. $subtitle',
+        ),
         excludeSemantics: true,
         child: Card(
           margin: EdgeInsets.zero,
@@ -89,7 +116,7 @@ class PromoBannerComponent extends StatelessWidget {
                         ),
                         if (subtitle != null)
                           Text(
-                            subtitle!,
+                            subtitle,
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: Colors.white,
                             ),

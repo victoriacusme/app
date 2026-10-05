@@ -10,7 +10,6 @@ import '../../../accounts/domain/account.dart';
 import '../../application/get_own_accounts.dart';
 import '../../application/transfer_between_own_accounts.dart';
 import '../../domain/transfer.dart';
-import '../../domain/transfer_error_codes.dart';
 import '../../domain/transfer_rules.dart';
 
 part 'own_transfer_event.dart';
@@ -133,7 +132,6 @@ class OwnTransferBloc extends Bloc<OwnTransferEvent, OwnTransferState> {
         step: TransferStep.editing,
         idempotencyKey: () => null,
         failure: () => null,
-        failureMessage: () => null,
       ),
     );
   }
@@ -160,24 +158,15 @@ class OwnTransferBloc extends Bloc<OwnTransferEvent, OwnTransferState> {
             step: TransferStep.success,
             transfer: () => transfer,
             failure: () => null,
-            failureMessage: () => null,
           ),
         );
       case Err(:final failure) when _outcomeUnknown(failure):
         emit(
-          state.copyWith(
-            step: TransferStep.unknown,
-            failure: () => failure,
-            failureMessage: () => null,
-          ),
+          state.copyWith(step: TransferStep.unknown, failure: () => failure),
         );
       case Err(:final failure):
         emit(
-          state.copyWith(
-            step: TransferStep.rejected,
-            failure: () => failure,
-            failureMessage: () => _rejectionMessage(failure, draft),
-          ),
+          state.copyWith(step: TransferStep.rejected, failure: () => failure),
         );
     }
   }
@@ -194,21 +183,5 @@ class OwnTransferBloc extends Bloc<OwnTransferEvent, OwnTransferState> {
     ServerFailure(code: ErrorMapper.circuitOpenCode) => false,
     ServerFailure(:final statusCode) => statusCode == null || statusCode >= 500,
     _ => false,
-  };
-
-  static String _rejectionMessage(
-    Failure failure,
-    TransferDraft draft,
-  ) => switch (failure.code) {
-    TransferErrorCodes.insufficientFunds =>
-      'Saldo insuficiente en ${draft.source.displayName}.',
-    TransferErrorCodes.accountNotActive => 'Una de las cuentas no está activa.',
-    TransferErrorCodes.sameAccount =>
-      'El origen y el destino deben ser cuentas distintas.',
-    TransferErrorCodes.currencyMismatch =>
-      'Las cuentas tienen monedas distintas.',
-    TransferErrorCodes.accountNotOwned ||
-    TransferErrorCodes.accountNotFound => 'No encontramos una de las cuentas.',
-    _ => failure.message,
   };
 }

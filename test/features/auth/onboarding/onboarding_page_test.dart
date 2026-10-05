@@ -4,10 +4,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:nexo_bank/app/session_cubit.dart';
-import 'package:nexo_bank/design_system/design_system.dart';
 import 'package:nexo_bank/features/auth/domain/session.dart';
 import 'package:nexo_bank/features/auth/presentation/onboarding/onboarding_cubit.dart';
 import 'package:nexo_bank/features/auth/presentation/onboarding/onboarding_page.dart';
+
+import '../../../helpers/pump_app.dart';
 
 class _MockOnboarding extends MockCubit<OnboardingState>
     implements OnboardingCubit {}
@@ -30,8 +31,7 @@ void main() {
   Future<void> pump(WidgetTester tester, OnboardingState state) async {
     when(() => cubit.state).thenReturn(state);
     await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.light(),
+      localizedApp(
         home: MultiBlocProvider(
           providers: [
             BlocProvider<OnboardingCubit>.value(value: cubit),

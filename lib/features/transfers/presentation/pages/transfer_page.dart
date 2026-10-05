@@ -4,8 +4,14 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/routes.dart';
 import '../../../../core/connectivity/connectivity_cubit.dart';
+import '../../../../core/result/failure.dart';
 import '../../../../design_system/design_system.dart';
+import '../../../../l10n/domain_l10n.dart';
+import '../../../../l10n/l10n.dart';
 import '../../../accounts/domain/account.dart';
+import '../../domain/transfer.dart';
+import '../../domain/transfer_error_codes.dart';
+import '../../domain/transfer_rules.dart';
 import '../bloc/own_transfer_bloc.dart';
 import '../widgets/amount_input_formatter.dart';
 
@@ -19,6 +25,7 @@ class TransferPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final step = context.select((OwnTransferBloc b) => b.state.step);
     final bloc = context.read<OwnTransferBloc>();
+    final l10n = context.l10n;
     return PopScope(
       // Mientras se envía no se puede salir; desde la confirmación, "atrás"
       // vuelve al formulario.
@@ -31,16 +38,21 @@ class TransferPage extends StatelessWidget {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(_title(step)),
+          title: Text(switch (step) {
+            TransferStep.confirming ||
+            TransferStep.submitting => l10n.confirmTitle,
+            TransferStep.success => l10n.receiptTitle,
+            _ => l10n.transferTitle,
+          }),
           automaticallyImplyLeading: step != TransferStep.submitting,
         ),
         body: SafeArea(
           child: switch (step) {
-            TransferStep.loadingAccounts => const Center(
-              child: CircularProgressIndicator(semanticsLabel: 'Cargando'),
+            TransferStep.loadingAccounts => Center(
+              child: CircularProgressIndicator(semanticsLabel: l10n.loading),
             ),
             TransferStep.accountsFailure => ErrorView(
-              message: bloc.state.failure!.message,
+              message: bloc.state.failure!.localized(l10n),
               correlationId: bloc.state.failure!.correlationId,
               onRetry: () => bloc.add(const TransferStarted()),
             ),
@@ -55,12 +67,6 @@ class TransferPage extends StatelessWidget {
       ),
     );
   }
-
-  static String _title(TransferStep step) => switch (step) {
-    TransferStep.confirming || TransferStep.submitting => 'Confirmar',
-    TransferStep.success => 'Comprobante',
-    _ => 'Transferir',
-  };
 }
 
 bool _isOffline(BuildContext context) =>
@@ -71,14 +77,12 @@ class _OfflineNotice extends StatelessWidget {
   const _OfflineNotice();
 
   @override
-  Widget build(BuildContext context) => const Padding(
-    padding: EdgeInsets.only(bottom: Spacing.md),
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: Spacing.md),
     child: InlineMessage(
-      key: Key('transfer_offline'),
+      key: const Key('transfer_offline'),
       kind: InlineMessageKind.warning,
-      message:
-          'Sin conexión. Las transferencias necesitan internet: '
-          'no se guardan para enviarse después.',
+      message: context.l10n.transferOffline,
     ),
   );
 }
@@ -107,24 +111,24 @@ class _TransferFormViewState extends State<TransferFormView> {
   @override
   Widget build(BuildContext context) {
     final offline = _isOffline(context);
+    final l10n = context.l10n;
     return BlocBuilder<OwnTransferBloc, OwnTransferState>(
       builder: (context, state) {
         if (state.sources.isEmpty || state.accounts.length < 2) {
-          return const EmptyView(
-            message:
-                'Necesitas al menos dos cuentas activas, y una con '
-                'saldo, para transferir entre tus cuentas.',
+          return EmptyView(
+            message: l10n.transferNeedTwoAccounts,
             icon: Icons.account_balance_wallet_outlined,
           );
         }
-        String? error(String? message) => state.showErrors ? message : null;
+        String? error(TransferError? e) =>
+            state.showErrors ? e?.message(l10n, source: state.source) : null;
         return ListView(
           padding: const EdgeInsets.all(Spacing.md),
           children: [
             if (offline) const _OfflineNotice(),
             _AccountDropdown(
               key: const Key('transfer_source'),
-              label: 'Desde',
+              label: l10n.fromLabel,
               accounts: state.sources,
               selectedId: state.sourceId,
               errorText: error(state.sourceError),
@@ -133,7 +137,7 @@ class _TransferFormViewState extends State<TransferFormView> {
             const SizedBox(height: Spacing.md),
             _AccountDropdown(
               key: const Key('transfer_target'),
-              label: 'Hacia',
+              label: l10n.toLabel,
               accounts: state.targets,
               selectedId: state.targets.any((a) => a.id == state.targetId)
                   ? state.targetId
@@ -152,11 +156,11 @@ class _TransferFormViewState extends State<TransferFormView> {
               textInputAction: TextInputAction.next,
               onChanged: (v) => _bloc.add(TransferAmountChanged(v)),
               decoration: InputDecoration(
-                labelText: 'Monto',
+                labelText: l10n.amountLabel,
                 prefixText: r'$ ',
                 helperText: state.source == null
                     ? null
-                    : 'Disponible: ${state.source!.balance.format()}',
+                    : l10n.availableAmount(state.source!.balance.formatL(l10n)),
                 errorText: error(state.amountError),
               ),
             ),
@@ -168,14 +172,14 @@ class _TransferFormViewState extends State<TransferFormView> {
               textInputAction: TextInputAction.done,
               onChanged: (v) => _bloc.add(TransferDescriptionChanged(v)),
               decoration: InputDecoration(
-                labelText: 'Descripción (opcional)',
+                labelText: l10n.descriptionOptional,
                 errorText: error(state.descriptionError),
               ),
             ),
             const SizedBox(height: Spacing.lg),
             PrimaryButton(
               key: const Key('transfer_continue'),
-              label: 'Continuar',
+              label: l10n.continueAction,
               onPressed: () {
                 FocusScope.of(context).unfocus();
                 _bloc.add(const TransferReviewRequested());
@@ -206,6 +210,7 @@ class _AccountDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return DropdownButtonFormField<String>(
       // La key cambia con las opciones para que el campo se reconstruya.
       key: ValueKey('$label-$selectedId-${accounts.length}'),
@@ -217,7 +222,7 @@ class _AccountDropdown extends StatelessWidget {
           DropdownMenuItem(
             value: a.id,
             child: Text(
-              '${a.displayName} ${a.maskedNumber} · ${a.balance.format()}',
+              '${a.label(l10n)} · ${a.balance.formatL(l10n)}',
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -236,6 +241,7 @@ class TransferConfirmView extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = context.watch<OwnTransferBloc>().state;
     final bloc = context.read<OwnTransferBloc>();
+    final l10n = context.l10n;
     final draft = state.draft!;
     final submitting = state.step == TransferStep.submitting;
     final offline = _isOffline(context);
@@ -244,29 +250,27 @@ class TransferConfirmView extends StatelessWidget {
       children: [
         if (offline) const _OfflineNotice(),
         Text(
-          'Revisa los datos antes de confirmar',
+          l10n.reviewBeforeConfirm,
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: Spacing.md),
         _Summary(
           rows: [
-            ('Monto', draft.amount.format()),
+            (l10n.amountLabel, draft.amount.formatL(l10n)),
+            (l10n.fromLabel, draft.source.label(l10n)),
+            (l10n.toLabel, draft.target.label(l10n)),
+            if (draft.description != null)
+              (l10n.description, draft.description!),
             (
-              'Desde',
-              '${draft.source.displayName} ${draft.source.maskedNumber}',
+              l10n.balanceAfter,
+              (draft.source.balance - draft.amount).formatL(l10n),
             ),
-            (
-              'Hacia',
-              '${draft.target.displayName} ${draft.target.maskedNumber}',
-            ),
-            if (draft.description != null) ('Descripción', draft.description!),
-            ('Saldo después', (draft.source.balance - draft.amount).format()),
           ],
         ),
         const SizedBox(height: Spacing.lg),
         PrimaryButton(
           key: const Key('transfer_confirm'),
-          label: 'Confirmar transferencia',
+          label: l10n.confirmTransfer,
           loading: submitting,
           onPressed: offline ? null : () => bloc.add(const TransferConfirmed()),
         ),
@@ -275,7 +279,7 @@ class TransferConfirmView extends StatelessWidget {
           onPressed: submitting
               ? null
               : () => bloc.add(const TransferEditRequested()),
-          child: const Text('Editar'),
+          child: Text(l10n.edit),
         ),
       ],
     );
@@ -288,6 +292,7 @@ class TransferReceiptView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<OwnTransferBloc>().state;
+    final l10n = context.l10n;
     final transfer = state.transfer!;
     final draft = state.draft!;
     final theme = Theme.of(context);
@@ -300,7 +305,7 @@ class TransferReceiptView extends StatelessWidget {
         Semantics(
           liveRegion: true,
           child: Text(
-            'Transferencia realizada',
+            l10n.transferDone,
             key: const Key('transfer_success'),
             textAlign: TextAlign.center,
             style: theme.textTheme.headlineSmall,
@@ -309,37 +314,48 @@ class TransferReceiptView extends StatelessWidget {
         const SizedBox(height: Spacing.lg),
         _Summary(
           rows: [
-            ('Monto', transfer.amount.format()),
-            (
-              'Desde',
-              '${draft.source.displayName} ${draft.source.maskedNumber}',
-            ),
-            (
-              'Hacia',
-              '${draft.target.displayName} ${draft.target.maskedNumber}',
-            ),
+            (l10n.amountLabel, transfer.amount.formatL(l10n)),
+            (l10n.fromLabel, draft.source.label(l10n)),
+            (l10n.toLabel, draft.target.label(l10n)),
             if (transfer.description != null)
-              ('Descripción', transfer.description!),
-            ('Fecha', DateTexts.dateTime(transfer.createdAt)),
-            ('Comprobante', transfer.id.split('-').first.toUpperCase()),
+              (l10n.description, transfer.description!),
+            (l10n.date, l10n.dateTime(transfer.createdAt)),
+            (l10n.receiptNumber, transfer.id.split('-').first.toUpperCase()),
           ],
         ),
         const SizedBox(height: Spacing.lg),
         PrimaryButton(
           key: const Key('transfer_done'),
-          label: 'Volver al inicio',
+          label: l10n.backHome,
           onPressed: () => context.go(Routes.home),
         ),
         const SizedBox(height: Spacing.sm),
         TextButton(
           onPressed: () =>
               context.read<OwnTransferBloc>().add(const TransferRestarted()),
-          child: const Text('Hacer otra transferencia'),
+          child: Text(l10n.anotherTransfer),
         ),
       ],
     );
   }
 }
+
+/// Motivo del rechazo en el idioma activo, según el `code` del backend.
+String _rejection(
+  AppLocalizations l10n,
+  Failure failure,
+  TransferDraft? draft,
+) => switch (failure.code) {
+  TransferErrorCodes.insufficientFunds => l10n.rejectInsufficient(
+    draft?.source.displayName(l10n) ?? l10n.ownAccount,
+  ),
+  TransferErrorCodes.accountNotActive => l10n.rejectAccountNotActive,
+  TransferErrorCodes.sameAccount => l10n.rejectSameAccount,
+  TransferErrorCodes.currencyMismatch => l10n.rejectCurrencyMismatch,
+  TransferErrorCodes.accountNotOwned ||
+  TransferErrorCodes.accountNotFound => l10n.rejectAccountNotFound,
+  _ => failure.localized(l10n),
+};
 
 class _RejectedView extends StatelessWidget {
   const _RejectedView();
@@ -347,13 +363,15 @@ class _RejectedView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<OwnTransferBloc>().state;
+    final l10n = context.l10n;
+    final failure = state.failure;
     return _ResultLayout(
       icon: Icons.cancel_outlined,
       color: Theme.of(context).colorScheme.error,
-      title: 'No se realizó la transferencia',
-      message: state.failureMessage ?? state.failure?.message ?? '',
-      correlationId: state.failure?.correlationId,
-      primaryLabel: 'Corregir datos',
+      title: l10n.transferRejectedTitle,
+      message: failure == null ? '' : _rejection(l10n, failure, state.draft),
+      correlationId: failure?.correlationId,
+      primaryLabel: l10n.fixData,
       onPrimary: () =>
           context.read<OwnTransferBloc>().add(const TransferEditRequested()),
     );
@@ -366,16 +384,14 @@ class _UnknownView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<OwnTransferBloc>().state;
+    final l10n = context.l10n;
     return _ResultLayout(
       icon: Icons.help_outline,
       color: NexoColors.warning,
-      title: 'No pudimos confirmar el resultado',
-      message:
-          'La conexión se interrumpió y no sabemos si la transferencia '
-          'se procesó. No la vuelvas a crear: toca "Verificar estado" y, si '
-          'ya se hizo, verás el comprobante sin que se repita.',
+      title: l10n.transferUnknownTitle,
+      message: l10n.transferUnknownBody,
       correlationId: state.failure?.correlationId,
-      primaryLabel: 'Verificar estado',
+      primaryLabel: l10n.checkStatus,
       primaryKey: const Key('transfer_check_status'),
       onPrimary: _isOffline(context)
           ? null
@@ -409,6 +425,7 @@ class _ResultLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     return ListView(
       padding: const EdgeInsets.all(Spacing.lg),
       children: [
@@ -427,7 +444,7 @@ class _ResultLayout extends StatelessWidget {
         if (correlationId != null) ...[
           const SizedBox(height: Spacing.sm),
           SelectableText(
-            'Código de soporte: $correlationId',
+            l10n.supportCode(correlationId!),
             textAlign: TextAlign.center,
             style: theme.textTheme.bodySmall,
           ),
@@ -441,7 +458,7 @@ class _ResultLayout extends StatelessWidget {
         const SizedBox(height: Spacing.sm),
         TextButton(
           onPressed: () => context.go(Routes.home),
-          child: const Text('Ir al inicio'),
+          child: Text(l10n.goHome),
         ),
       ],
     );

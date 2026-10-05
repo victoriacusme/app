@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../design_system/design_system.dart';
+import '../../../../l10n/l10n.dart';
 import '../../domain/movement.dart';
 
 class MovementTile extends StatelessWidget {
@@ -11,15 +12,20 @@ class MovementTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final isCredit = movement.type == MovementType.credit;
     final color = isCredit ? NexoColors.success : theme.colorScheme.onSurface;
+    final time = l10n.time(movement.bookedAt);
     final description = movement.description?.isNotEmpty ?? false
         ? movement.description!
-        : (isCredit ? 'Crédito' : 'Débito');
+        : (isCredit ? l10n.movementCredit : l10n.movementDebit);
     return Semantics(
-      label:
-          '$description, ${isCredit ? 'ingreso' : 'egreso'} de '
-          '${movement.amount.toSpeech()}, ${DateTexts.time(movement.bookedAt)}',
+      label: l10n.movementSemantics(
+        description,
+        isCredit ? l10n.movementIncoming : l10n.movementOutgoing,
+        movement.amount.speech(l10n),
+        time,
+      ),
       excludeSemantics: true,
       child: ListTile(
         minVerticalPadding: Spacing.sm,
@@ -33,11 +39,10 @@ class MovementTile extends StatelessWidget {
         ),
         title: Text(description, maxLines: 2, overflow: TextOverflow.ellipsis),
         subtitle: Text(
-          '${DateTexts.time(movement.bookedAt)} · '
-          'Saldo ${movement.balanceAfter.format()}',
+          l10n.movementSubtitle(time, movement.balanceAfter.formatL(l10n)),
         ),
         trailing: Text(
-          movement.signedAmount.format(signed: true),
+          movement.signedAmount.formatL(l10n, signed: true),
           style: theme.textTheme.titleSmall?.copyWith(
             color: color,
             fontWeight: FontWeight.w600,

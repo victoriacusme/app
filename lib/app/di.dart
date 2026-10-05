@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:uuid/uuid.dart';
@@ -42,14 +44,20 @@ import '../features/fx/domain/fx_repository.dart';
 import '../features/fx/infrastructure/fx_repository_impl.dart';
 import '../features/fx/presentation/fx_cubit.dart';
 import '../features/notifications/application/local_transfer_notifier.dart';
+import '../features/notifications/application/push_registration.dart';
+import '../features/notifications/domain/push_token_source.dart';
+import '../features/notifications/infrastructure/device_remote_data_source.dart';
 import '../features/notifications/infrastructure/local_notifications_service.dart';
 import '../features/transfers/application/get_own_accounts.dart';
+import '../features/transfers/application/get_transfer_detail.dart';
 import '../features/transfers/application/transfer_between_own_accounts.dart';
 import '../features/transfers/domain/transfer_notifier.dart';
 import '../features/transfers/domain/transfer_repository.dart';
 import '../features/transfers/infrastructure/transfer_remote_data_source.dart';
 import '../features/transfers/infrastructure/transfer_repository_impl.dart';
 import '../features/transfers/presentation/bloc/own_transfer_bloc.dart';
+import '../features/transfers/presentation/pages/transfer_detail_page.dart';
+import '../l10n/l10n.dart';
 import 'app_lock_cubit.dart';
 import 'app_settings_cubit.dart';
 import 'session_cubit.dart';
@@ -80,6 +88,7 @@ void configureDependencies({
             (await getIt<AuthRemoteDataSource>().refresh(refreshToken))
                 .toTokens(),
         onSessionExpired: () => getIt<SessionCubit>().sessionExpired(),
+        language: () => getIt<AppSettingsCubit>().state.languageCode,
       ),
     );
 
@@ -129,10 +138,28 @@ void configureDependencies({
       () => TransferRepositoryImpl(getIt()),
     )
     ..registerLazySingleton(() => GetOwnAccounts(getIt()))
+    ..registerLazySingleton(() => GetTransferDetail(getIt(), getIt()))
+    ..registerFactoryParam<TransferDetailCubit, String, void>(
+      (id, _) => TransferDetailCubit(getIt(), id),
+    )
+    ..registerLazySingleton(() => DeviceRemoteDataSource(getIt()))
+    ..registerLazySingleton<PushTokenSource>(
+      // Sin Firebase configurado no hay token (ver NoPushTokenSource).
+      () => NoPushTokenSource(
+        defaultTargetPlatform == TargetPlatform.iOS
+            ? DevicePlatform.ios
+            : DevicePlatform.android,
+      ),
+    )
+    ..registerLazySingleton(() => PushRegistration(getIt(), getIt()))
     ..registerLazySingleton<TransferNotifier>(
       () => LocalTransferNotifier(
         service: getIt(),
         isEnabled: () => getIt<AppSettingsCubit>().state.notificationsEnabled,
+        // El aviso se arma en el idioma activo de la app.
+        l10n: () => lookupAppLocalizations(
+          Locale(getIt<AppSettingsCubit>().state.languageCode),
+        ),
       ),
     )
     ..registerLazySingleton(
@@ -162,8 +189,11 @@ void configureDependencies({
       () => ExperienceRepositoryImpl(
         dio: getIt(),
         cache: getIt(),
-        loadFallback: () =>
-            rootBundle.loadString('assets/experience/home_fallback.json'),
+        // Layout de respaldo en el idioma activo.
+        loadFallback: () => rootBundle.loadString(
+          'assets/experience/home_fallback_'
+          '${getIt<AppSettingsCubit>().state.languageCode}.json',
+        ),
       ),
     )
     ..registerFactory(() => ExperienceCubit(getIt()))
@@ -192,6 +222,8 @@ void configureDependencies({
       logout: getIt(),
       // Al cerrar o expirar la sesión no quedan datos del cliente.
       clearUserData: getIt<KeyValueCache>().clear,
+      onSignedIn: () => getIt<PushRegistration>().register(),
+      onSigningOut: () => getIt<PushRegistration>().unregister(),
     ),
   );
 }

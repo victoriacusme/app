@@ -20,7 +20,7 @@ void main() {
 
     Future<void> logout() async {
       await tester.tap(find.byKey(const Key('home_profile')));
-      await pumpUntil(tester, find.text('Preferencias'));
+      await pumpUntil(tester, find.byKey(const Key('profile_language')));
       await tester.scrollUntilVisible(
         find.byKey(const Key('profile_logout')),
         300,
@@ -65,7 +65,7 @@ void main() {
     await pumpUntil(tester, find.byKey(const Key('home_profile')));
 
     await tester.tap(find.byKey(const Key('home_profile')));
-    await pumpUntil(tester, find.text('Preferencias'));
+    await pumpUntil(tester, find.byKey(const Key('profile_language')));
     await shot('06_perfil');
     await tester.binding.handlePopRoute();
     await pumpUntil(tester, find.byKey(const Key('home_profile')));

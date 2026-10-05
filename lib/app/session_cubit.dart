@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -45,11 +47,19 @@ class SessionCubit extends Cubit<SessionState> {
     required this._restoreSession,
     required this._logout,
     required this._clearUserData,
+    this._onSignedIn,
+    this._onSigningOut,
   }) : super(const SessionUnknown());
 
   final RestoreSession _restoreSession;
   final Logout _logout;
   final Future<void> Function() _clearUserData;
+
+  /// Al iniciar o restaurar la sesión (p. ej. registrar el token de push).
+  final Future<void> Function()? _onSignedIn;
+
+  /// Antes de cerrar la sesión, mientras los tokens siguen vigentes.
+  final Future<void> Function()? _onSigningOut;
 
   Future<void> restore() async {
     final session = await _restoreSession();
@@ -58,11 +68,16 @@ class SessionCubit extends Cubit<SessionState> {
           ? const SessionUnauthenticated()
           : SessionAuthenticated(session, restored: true),
     );
+    if (session != null) unawaited(_onSignedIn?.call());
   }
 
-  void authenticated(Session session) => emit(SessionAuthenticated(session));
+  void authenticated(Session session) {
+    emit(SessionAuthenticated(session));
+    unawaited(_onSignedIn?.call());
+  }
 
   Future<void> logout() async {
+    await _onSigningOut?.call();
     await _logout();
     await _clearUserData();
     emit(const SessionUnauthenticated());

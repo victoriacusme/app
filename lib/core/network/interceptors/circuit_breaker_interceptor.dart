@@ -44,7 +44,7 @@ class CircuitBreakerInterceptor extends Interceptor {
           requestOptions: options,
           type: DioExceptionType.connectionError,
           error: CircuitOpenException(service),
-          message: 'Circuito abierto para $service',
+          message: 'Circuit open for $service',
         ),
       );
     }

@@ -25,7 +25,6 @@ final class OwnTransferState extends Equatable {
     this.idempotencyKey,
     this.transfer,
     this.failure,
-    this.failureMessage,
   });
 
   final TransferStep step;
@@ -42,7 +41,6 @@ final class OwnTransferState extends Equatable {
   final String? idempotencyKey;
   final Transfer? transfer;
   final Failure? failure;
-  final String? failureMessage;
 
   Account? get source => _find(sourceId);
   Account? get target => _find(targetId);
@@ -55,10 +53,12 @@ final class OwnTransferState extends Equatable {
   List<Account> get targets =>
       accounts.where((a) => a.isActive && a.id != sourceId).toList();
 
-  String? get sourceError => TransferRules.sourceError(source);
-  String? get targetError => TransferRules.targetError(source, target);
-  String? get amountError => TransferRules.amountError(source, amountText);
-  String? get descriptionError => TransferRules.descriptionError(description);
+  TransferError? get sourceError => TransferRules.sourceError(source);
+  TransferError? get targetError => TransferRules.targetError(source, target);
+  TransferError? get amountError =>
+      TransferRules.amountError(source, amountText);
+  TransferError? get descriptionError =>
+      TransferRules.descriptionError(description);
 
   bool get isValid =>
       sourceError == null &&
@@ -89,7 +89,6 @@ final class OwnTransferState extends Equatable {
     String? Function()? idempotencyKey,
     Transfer? Function()? transfer,
     Failure? Function()? failure,
-    String? Function()? failureMessage,
   }) => OwnTransferState(
     step: step ?? this.step,
     accounts: accounts ?? this.accounts,
@@ -103,9 +102,6 @@ final class OwnTransferState extends Equatable {
         : this.idempotencyKey,
     transfer: transfer != null ? transfer() : this.transfer,
     failure: failure != null ? failure() : this.failure,
-    failureMessage: failureMessage != null
-        ? failureMessage()
-        : this.failureMessage,
   );
 
   @override
@@ -120,6 +116,5 @@ final class OwnTransferState extends Equatable {
     idempotencyKey,
     transfer,
     failure,
-    failureMessage,
   ];
 }

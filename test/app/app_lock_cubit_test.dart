@@ -95,11 +95,11 @@ void main() {
       ..emit(const AppLockState(available: true, enabled: true, locked: true));
 
     when(() => biometrics.authenticate(any())).thenAnswer((_) async => false);
-    expect(await cubit.unlock(), isFalse);
+    expect(await cubit.unlock(reason: 'r'), isFalse);
     expect(cubit.state.locked, isTrue);
 
     when(() => biometrics.authenticate(any())).thenAnswer((_) async => true);
-    expect(await cubit.unlock(), isTrue);
+    expect(await cubit.unlock(reason: 'r'), isTrue);
     expect(cubit.state.locked, isFalse);
   });
 
@@ -111,7 +111,7 @@ void main() {
       final cubit = build();
       await cubit.init();
 
-      expect(await cubit.setEnabled(enabled: true), isFalse);
+      expect(await cubit.setEnabled(enabled: true, reason: 'r'), isFalse);
       expect(cubit.state.enabled, isFalse);
       verifyNever(() => settings.setEnabled(enabled: true));
     },

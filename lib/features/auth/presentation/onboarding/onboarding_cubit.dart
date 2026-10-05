@@ -33,7 +33,7 @@ final class OnboardingState extends Equatable {
     this.showErrors = false,
     this.submitting = false,
     this.serverErrors = const {},
-    this.failureMessage,
+    this.failure,
     this.session,
   });
 
@@ -47,8 +47,10 @@ final class OnboardingState extends Equatable {
   final bool submitting;
 
   /// Errores que devolvió el backend por campo (p. ej. usuario tomado).
-  final Map<OnboardingField, String> serverErrors;
-  final String? failureMessage;
+  final Map<OnboardingField, RegistrationError> serverErrors;
+
+  /// Error general del registro (sin campo asociado).
+  final Failure? failure;
   final Session? session;
 
   String value(OnboardingField f) => values[f] ?? '';
@@ -72,7 +74,7 @@ final class OnboardingState extends Equatable {
     OnboardingStep.terms: [OnboardingField.terms],
   };
 
-  String? errorOf(OnboardingField f) {
+  RegistrationError? errorOf(OnboardingField f) {
     final server = serverErrors[f];
     if (server != null) return server;
     return switch (f) {
@@ -88,12 +90,12 @@ final class OnboardingState extends Equatable {
         value(f),
       ),
       OnboardingField.terms =>
-        acceptedTerms ? null : 'Debes aceptar los términos para continuar',
+        acceptedTerms ? null : RegistrationError.termsRequired,
     };
   }
 
   /// Error visible en pantalla (solo después de intentar avanzar).
-  String? visibleError(OnboardingField f) =>
+  RegistrationError? visibleError(OnboardingField f) =>
       showErrors || serverErrors.containsKey(f) ? errorOf(f) : null;
 
   bool isStepValid(OnboardingStep s) =>
@@ -116,8 +118,8 @@ final class OnboardingState extends Equatable {
     bool? acceptedTerms,
     bool? showErrors,
     bool? submitting,
-    Map<OnboardingField, String>? serverErrors,
-    String? Function()? failureMessage,
+    Map<OnboardingField, RegistrationError>? serverErrors,
+    Failure? Function()? failure,
     Session? session,
   }) => OnboardingState(
     step: step ?? this.step,
@@ -127,9 +129,7 @@ final class OnboardingState extends Equatable {
     showErrors: showErrors ?? this.showErrors,
     submitting: submitting ?? this.submitting,
     serverErrors: serverErrors ?? this.serverErrors,
-    failureMessage: failureMessage != null
-        ? failureMessage()
-        : this.failureMessage,
+    failure: failure != null ? failure() : this.failure,
     session: session ?? this.session,
   );
 
@@ -142,7 +142,7 @@ final class OnboardingState extends Equatable {
     showErrors,
     submitting,
     serverErrors,
-    failureMessage,
+    failure,
     session,
   ];
 }
@@ -219,10 +219,10 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   }
 
   OnboardingState _goTo(OnboardingStep step) =>
-      state.copyWith(step: step, showErrors: false, failureMessage: () => null);
+      state.copyWith(step: step, showErrors: false, failure: () => null);
 
   Future<void> _submit() async {
-    emit(state.copyWith(submitting: true, failureMessage: () => null));
+    emit(state.copyWith(submitting: true, failure: () => null));
     final result = await _register(state.toRegistration());
     switch (result) {
       case Ok(value: final session):
@@ -244,14 +244,17 @@ class OnboardingCubit extends Cubit<OnboardingState> {
       return base.copyWith(
         step: OnboardingStep.credentials,
         serverErrors: {
-          OnboardingField.username: 'Ese usuario ya existe. Elige otro.',
+          OnboardingField.username: RegistrationError.usernameTaken,
         },
       );
     }
     if (failure case ValidationFailure(:final fieldErrors)
         when fieldErrors.isNotEmpty) {
+      // El texto del backend no se muestra (viene en español): se marca
+      // el campo y la app explica el error en el idioma activo.
       final errors = {
-        for (final e in fieldErrors.entries) ?_apiFields[e.key]: e.value,
+        for (final e in fieldErrors.entries)
+          ?_apiFields[e.key]: RegistrationError.serverInvalid,
       };
       // Vuelve al primer paso que tenga un campo con error.
       final step = OnboardingStep.values.firstWhere(
@@ -264,14 +267,9 @@ class OnboardingCubit extends Cubit<OnboardingState> {
         step: step,
         serverErrors: errors,
         showErrors: true,
-        failureMessage: () => failure.message,
+        failure: () => failure,
       );
     }
-    return base.copyWith(
-      failureMessage: () => failure.code == AuthErrorCodes.onboardingUnavailable
-          ? 'No pudimos completar el registro en este momento. '
-                'Intenta nuevamente en unos minutos.'
-          : failure.message,
-    );
+    return base.copyWith(failure: () => failure);
   }
 }

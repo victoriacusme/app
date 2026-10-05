@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../app/session_cubit.dart';
 import '../../../../design_system/design_system.dart';
+import '../../../../l10n/l10n.dart';
 import '../bloc/login_bloc.dart';
 import '../onboarding/onboarding_page.dart';
 
@@ -59,9 +60,18 @@ class _LoginFormState extends State<_LoginForm> {
     );
   }
 
+  static String _errorText(AppLocalizations l10n, LoginState state) =>
+      switch (state.error) {
+        LoginError.locked => l10n.loginLocked,
+        LoginError.invalidCredentials => l10n.loginInvalidCredentials,
+        _ => state.failure?.localized(l10n) ?? l10n.errorUnexpected,
+      };
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final validators = LoginValidators(l10n);
     final expired = context.select(
       (SessionCubit c) =>
           c.state is SessionUnauthenticated &&
@@ -80,18 +90,18 @@ class _LoginFormState extends State<_LoginForm> {
                   Icons.account_balance,
                   size: 56,
                   color: theme.colorScheme.primary,
-                  semanticLabel: 'Nexo Bank',
+                  semanticLabel: l10n.appTitle,
                 ),
                 const SizedBox(height: Spacing.md),
                 Text(
-                  'Bienvenido a Nexo',
+                  l10n.loginWelcome,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.headlineSmall,
                 ),
                 const SizedBox(height: Spacing.xl),
                 if (expired && state.status == LoginStatus.initial) ...[
-                  const InlineMessage(
-                    message: 'Tu sesión expiró. Ingresa nuevamente.',
+                  InlineMessage(
+                    message: l10n.loginSessionExpired,
                     kind: InlineMessageKind.info,
                   ),
                   const SizedBox(height: Spacing.md),
@@ -99,7 +109,7 @@ class _LoginFormState extends State<_LoginForm> {
                 if (state.status == LoginStatus.failure) ...[
                   InlineMessage(
                     key: const Key('login_error'),
-                    message: state.message!,
+                    message: _errorText(l10n, state),
                     kind: state.error == LoginError.locked
                         ? InlineMessageKind.warning
                         : InlineMessageKind.error,
@@ -108,31 +118,31 @@ class _LoginFormState extends State<_LoginForm> {
                 ],
                 AppTextField(
                   key: const Key('login_username'),
-                  label: 'Usuario',
+                  label: l10n.usernameLabel,
                   controller: _username,
                   prefixIcon: Icons.person_outline,
                   enabled: !state.isSubmitting,
                   textInputAction: TextInputAction.next,
                   autofillHints: const [AutofillHints.username],
-                  validator: LoginValidators.username,
+                  validator: validators.username,
                 ),
                 const SizedBox(height: Spacing.md),
                 AppTextField(
                   key: const Key('login_password'),
-                  label: 'Contraseña',
+                  label: l10n.passwordLabel,
                   controller: _password,
                   prefixIcon: Icons.lock_outline,
                   obscure: true,
                   enabled: !state.isSubmitting,
                   textInputAction: TextInputAction.done,
                   autofillHints: const [AutofillHints.password],
-                  validator: LoginValidators.password,
+                  validator: validators.password,
                   onSubmitted: (_) => _submit(),
                 ),
                 const SizedBox(height: Spacing.lg),
                 PrimaryButton(
                   key: const Key('login_submit'),
-                  label: 'Ingresar',
+                  label: l10n.loginSubmit,
                   loading: state.isSubmitting,
                   onPressed: _submit,
                 ),
@@ -148,18 +158,25 @@ class _LoginFormState extends State<_LoginForm> {
 }
 
 /// Mismos límites que valida ms-auth (`LoginRequest`).
-abstract final class LoginValidators {
-  static String? username(String? value) {
+class LoginValidators {
+  const LoginValidators(this._l10n);
+
+  static const maxUsername = 30;
+  static const maxPassword = 128;
+
+  final AppLocalizations _l10n;
+
+  String? username(String? value) {
     final v = value?.trim() ?? '';
-    if (v.isEmpty) return 'Ingresa tu usuario';
-    if (v.length > 30) return 'Máximo 30 caracteres';
+    if (v.isEmpty) return _l10n.usernameRequired;
+    if (v.length > maxUsername) return _l10n.maxChars(maxUsername);
     return null;
   }
 
-  static String? password(String? value) {
+  String? password(String? value) {
     final v = value ?? '';
-    if (v.isEmpty) return 'Ingresa tu contraseña';
-    if (v.length > 128) return 'Máximo 128 caracteres';
+    if (v.isEmpty) return _l10n.passwordRequired;
+    if (v.length > maxPassword) return _l10n.maxChars(maxPassword);
     return null;
   }
 }

@@ -9,10 +9,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:nexo_bank/design_system/design_system.dart';
+
+import '../../helpers/pump_app.dart';
+
 import 'package:nexo_bank/features/accounts/presentation/bloc/accounts_bloc.dart';
 import 'package:nexo_bank/features/experience/domain/experience_layout.dart';
 import 'package:nexo_bank/features/experience/presentation/component_registry.dart';
 import 'package:nexo_bank/features/fx/domain/fx_rates.dart';
+import 'package:nexo_bank/core/time/app_clock.dart';
+import 'package:nexo_bank/features/customer/presentation/profile_bloc.dart';
 import 'package:nexo_bank/features/fx/presentation/fx_cubit.dart';
 
 import '../../helpers/accounts_fixtures.dart';
@@ -99,10 +104,15 @@ final _premium = [
 void main() {
   late _MockAccounts accounts;
   late _MockFx fx;
+  late MockProfileBloc profile;
 
   setUp(() {
     accounts = _MockAccounts();
     fx = _MockFx();
+    profile = profileOf('Ana');
+    // Saludo determinista: 15:00 → "Buenas tardes".
+    AppClock.now = () => DateTime(2026, 10, 4, 15);
+    addTearDown(() => AppClock.now = DateTime.now);
     when(() => accounts.state).thenReturn(
       AccountsState(
         status: AccountsStatus.loaded,
@@ -146,9 +156,9 @@ void main() {
         providers: [
           BlocProvider<AccountsBloc>.value(value: accounts),
           BlocProvider<FxCubit>.value(value: fx),
+          BlocProvider<ProfileBloc>.value(value: profile),
         ],
-        child: MaterialApp(
-          debugShowCheckedModeBanner: false,
+        child: localizedApp(
           theme: theme,
           home: Scaffold(
             body: ListView(

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../formatters.dart';
+import '../../l10n/l10n.dart';
 import '../tokens.dart';
 
 /// Indica que los datos visibles son guardados: "Datos de hace X min" o,
@@ -39,10 +39,11 @@ class _StaleDataBannerState extends State<StaleDataBanner> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final age = DateTexts.relative(widget.updatedAt);
+    final l10n = context.l10n;
+    final age = l10n.relative(widget.updatedAt);
     final text = widget.refreshFailed
-        ? 'No pudimos actualizar. Mostrando datos de $age.'
-        : 'Datos de $age. Actualizando…';
+        ? l10n.staleRefreshFailed(age)
+        : l10n.staleRefreshing(age);
     final fg = widget.refreshFailed
         ? scheme.onTertiaryContainer
         : scheme.onSecondaryContainer;
@@ -76,7 +77,7 @@ class _StaleDataBannerState extends State<StaleDataBanner> {
               if (widget.refreshFailed && widget.onRetry != null)
                 TextButton(
                   onPressed: widget.onRetry,
-                  child: Text('Reintentar', style: TextStyle(color: fg)),
+                  child: Text(l10n.retry, style: TextStyle(color: fg)),
                 ),
             ],
           ),

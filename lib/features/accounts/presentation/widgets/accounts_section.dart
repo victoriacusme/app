@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/routes.dart';
 import '../../../../core/money/money.dart';
 import '../../../../design_system/design_system.dart';
+import '../../../../l10n/l10n.dart';
 import '../../domain/account.dart';
 import '../bloc/accounts_bloc.dart';
 import 'account_card.dart';
@@ -13,19 +14,17 @@ import 'account_card.dart';
 /// servicios fallan (ms-customer, tipo de cambio), esta sección sigue
 /// funcionando con sus propios datos y su caché.
 class AccountsSection extends StatelessWidget {
-  const AccountsSection({
-    this.title = 'Tus cuentas',
-    this.showTotal = false,
-    super.key,
-  });
+  const AccountsSection({this.title, this.showTotal = false, super.key});
 
-  final String title;
+  /// Por defecto, "Tus cuentas" en el idioma activo.
+  final String? title;
   final bool showTotal;
 
   @override
   Widget build(BuildContext context) {
     final bloc = context.read<AccountsBloc>();
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     return BlocBuilder<AccountsBloc, AccountsState>(
       builder: (context, state) {
         final loading = state.status == AccountsStatus.loading;
@@ -43,15 +42,18 @@ class AccountsSection extends StatelessWidget {
             ],
             Semantics(
               header: true,
-              child: Text(title, style: theme.textTheme.titleLarge),
+              child: Text(
+                title ?? l10n.yourAccounts,
+                style: theme.textTheme.titleLarge,
+              ),
             ),
             if (showTotal && state.accounts.isNotEmpty)
               for (final total in _totals(state.accounts))
                 Semantics(
-                  label: 'Saldo total ${total.toSpeech()}',
+                  label: l10n.totalBalance(total.speech(l10n)),
                   excludeSemantics: true,
                   child: Text(
-                    'Saldo total ${total.format()}',
+                    l10n.totalBalance(total.formatL(l10n)),
                     key: const Key('accounts_total'),
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
@@ -61,7 +63,7 @@ class AccountsSection extends StatelessWidget {
             const SizedBox(height: Spacing.md),
             if (state.status == AccountsStatus.failure)
               ErrorView(
-                message: state.failure!.message,
+                message: state.failure!.localized(l10n),
                 correlationId: state.failure!.correlationId,
                 onRetry: () => bloc.add(const AccountsRequested()),
               )
@@ -71,8 +73,8 @@ class AccountsSection extends StatelessWidget {
                 const SizedBox(height: Spacing.md),
               ]
             else if (state.accounts.isEmpty)
-              const EmptyView(
-                message: 'Todavía no tienes cuentas.',
+              EmptyView(
+                message: l10n.noAccounts,
                 icon: Icons.account_balance_wallet_outlined,
               )
             else

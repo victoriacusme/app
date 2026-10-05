@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
 import '../tokens.dart';
 
 /// Estado de error con botón de reintento. Muestra el correlation-id
@@ -39,7 +40,7 @@ class ErrorView extends StatelessWidget {
             if (correlationId != null) ...[
               const SizedBox(height: Spacing.sm),
               SelectableText(
-                'Código de soporte: $correlationId',
+                context.l10n.supportCode(correlationId!),
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodySmall,
               ),
@@ -49,7 +50,7 @@ class ErrorView extends StatelessWidget {
               OutlinedButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Reintentar'),
+                label: Text(context.l10n.retry),
               ),
             ],
           ],

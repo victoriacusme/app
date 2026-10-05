@@ -9,17 +9,19 @@ final class LoginState extends Equatable {
   const LoginState({
     this.status = LoginStatus.initial,
     this.error,
-    this.message,
+    this.failure,
     this.session,
   });
 
   final LoginStatus status;
   final LoginError? error;
-  final String? message;
+
+  /// Detalle del error (para el mensaje y el código de soporte).
+  final Failure? failure;
   final Session? session;
 
   bool get isSubmitting => status == LoginStatus.submitting;
 
   @override
-  List<Object?> get props => [status, error, message, session];
+  List<Object?> get props => [status, error, failure, session];
 }

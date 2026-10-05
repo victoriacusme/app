@@ -37,7 +37,9 @@ void main() {
     );
     await pumpUntil(
       tester,
-      find.text('No hay más movimientos'),
+      find.textContaining(
+        RegExp('No hay más movimientos|No more transactions'),
+      ),
       timeout: const Duration(seconds: 20),
     ).catchError((_) {});
     expect(
@@ -50,7 +52,7 @@ void main() {
     await tester.binding.handlePopRoute();
     await pumpUntil(tester, find.byKey(const Key('home_profile')));
     await tester.tap(find.byKey(const Key('home_profile')));
-    await pumpUntil(tester, find.text('Preferencias'));
+    await pumpUntil(tester, find.byKey(const Key('profile_language')));
     await tester.scrollUntilVisible(
       find.byKey(const Key('profile_logout')),
       300,

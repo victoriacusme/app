@@ -4,8 +4,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/money/money.dart';
 import '../../../../core/navigation/deep_links.dart';
 import '../../../../design_system/design_system.dart';
+import '../../../../l10n/l10n.dart';
 import '../../../accounts/presentation/bloc/accounts_bloc.dart';
 import '../../domain/experience_layout.dart';
+import '../localized_text.dart';
 
 /// Meta de ahorro: el progreso es el saldo de la cuenta asociada frente al
 /// objetivo. Usa los datos de `AccountsBloc`; si la cuenta no está, se oculta.
@@ -24,14 +26,26 @@ class SavingsGoalComponent extends StatelessWidget {
       throw FormatException('target inválido: $target');
     }
     return SavingsGoalComponent(
-      title: spec.properties['title'] as String,
+      title: LocalizedText.parse(spec.properties['title']),
       targetText: target,
       accountId: spec.properties['accountId'] as String,
       deeplink: spec.properties['deeplink'] as String?,
     );
   }
 
-  final String title;
+  final LocalizedText title;
+
+  static final _prefix = RegExp(
+    r'^\s*(meta|goal)\s*:?\s*',
+    caseSensitive: false,
+  );
+
+  /// Nombre de la meta sin el prefijo genérico ("Meta:", "Goal:").
+  static String goalName(String title) {
+    final name = title.replaceFirst(_prefix, '').trim();
+    return name.isEmpty ? '' : '${name[0].toUpperCase()}${name.substring(1)}';
+  }
+
   final String targetText;
   final String accountId;
   final String? deeplink;
@@ -44,6 +58,11 @@ class SavingsGoalComponent extends StatelessWidget {
     );
     if (account == null) return const SizedBox.shrink();
 
+    final l10n = context.l10n;
+    // El encabezado lo pone la app; del backend solo se usa el nombre que el
+    // cliente le dio a su meta ("Meta: viaje a Galápagos" → "viaje a
+    // Galápagos").
+    final name = goalName(title.resolve(l10n.localeName));
     final target = Money.parse(targetText, account.currency);
     final progress = target.cents <= 0
         ? 1.0
@@ -54,9 +73,12 @@ class SavingsGoalComponent extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: Spacing.md),
       child: Semantics(
-        label:
-            '$title. Llevas ${account.balance.toSpeech()} de '
-            '${target.toSpeech()}, $percent por ciento',
+        label: l10n.savingsSemantics(
+          name.isEmpty ? l10n.savingsGoal : '${l10n.savingsGoal}: $name',
+          account.balance.speech(l10n),
+          target.speech(l10n),
+          percent,
+        ),
         button: deeplink != null,
         excludeSemantics: true,
         child: Card(
@@ -79,11 +101,23 @@ class SavingsGoalComponent extends StatelessWidget {
                       ),
                       const SizedBox(width: Spacing.sm),
                       Expanded(
-                        child: Text(title, style: theme.textTheme.titleMedium),
+                        child: Text(
+                          l10n.savingsGoal,
+                          style: theme.textTheme.titleMedium,
+                        ),
                       ),
                       Text('$percent %', style: theme.textTheme.titleMedium),
                     ],
                   ),
+                  if (name.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: Spacing.xs),
+                      child: Text(
+                        name,
+                        key: const Key('savings_goal_name'),
+                        style: theme.textTheme.bodyLarge,
+                      ),
+                    ),
                   const SizedBox(height: Spacing.sm),
                   LinearProgressIndicator(
                     value: progress,
@@ -92,7 +126,10 @@ class SavingsGoalComponent extends StatelessWidget {
                   ),
                   const SizedBox(height: Spacing.sm),
                   Text(
-                    '${account.balance.format()} de ${target.format()}',
+                    l10n.savingsProgress(
+                      account.balance.formatL(l10n),
+                      target.formatL(l10n),
+                    ),
                     style: theme.textTheme.bodyMedium,
                   ),
                 ],

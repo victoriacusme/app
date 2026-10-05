@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
+
 /// Botón principal. Con [loading] muestra un indicador y queda deshabilitado
 /// para evitar envíos duplicados.
 class PrimaryButton extends StatelessWidget {
@@ -19,7 +21,7 @@ class PrimaryButton extends StatelessWidget {
     return Semantics(
       button: true,
       enabled: onPressed != null && !loading,
-      label: loading ? '$label, cargando' : null,
+      label: loading ? context.l10n.buttonLoading(label) : null,
       child: FilledButton(
         onPressed: loading ? null : onPressed,
         child: loading

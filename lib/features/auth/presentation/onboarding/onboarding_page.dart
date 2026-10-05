@@ -6,24 +6,29 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/routes.dart';
 import '../../../../app/session_cubit.dart';
 import '../../../../design_system/design_system.dart';
+import '../../../../l10n/domain_l10n.dart';
+import '../../../../l10n/l10n.dart';
 import 'onboarding_cubit.dart';
 
 /// Registro en pasos con barra de progreso.
 class OnboardingPage extends StatelessWidget {
   const OnboardingPage({super.key});
 
-  static const _titles = {
-    OnboardingStep.personal: 'Tus datos',
-    OnboardingStep.credentials: 'Tu usuario',
-    OnboardingStep.terms: 'Términos',
-    OnboardingStep.welcome: 'Bienvenido',
-  };
+  static String _title(AppLocalizations l10n, OnboardingStep step) =>
+      switch (step) {
+        OnboardingStep.personal => l10n.onboardingStepPersonal,
+        OnboardingStep.credentials => l10n.onboardingStepCredentials,
+        OnboardingStep.terms => l10n.onboardingStepTerms,
+        OnboardingStep.welcome => l10n.onboardingStepWelcome,
+      };
 
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<OnboardingCubit>();
     final state = context.watch<OnboardingCubit>().state;
+    final l10n = context.l10n;
     final step = state.step;
+    final total = OnboardingStep.values.length;
     return PopScope(
       canPop: step == OnboardingStep.personal,
       onPopInvokedWithResult: (didPop, _) {
@@ -31,7 +36,7 @@ class OnboardingPage extends StatelessWidget {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(_titles[step]!),
+          title: Text(_title(l10n, step)),
           automaticallyImplyLeading: step != OnboardingStep.welcome,
           leading:
               step == OnboardingStep.personal || step == OnboardingStep.welcome
@@ -47,9 +52,7 @@ class OnboardingPage extends StatelessWidget {
                 Spacing.sm,
               ),
               child: Semantics(
-                label:
-                    'Paso ${step.index + 1} de '
-                    '${OnboardingStep.values.length}',
+                label: l10n.onboardingStepOf(step.index + 1, total),
                 child: Row(
                   children: [
                     Expanded(
@@ -59,7 +62,7 @@ class OnboardingPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: Spacing.sm),
-                    Text('${step.index + 1}/${OnboardingStep.values.length}'),
+                    Text('${step.index + 1}/$total'),
                   ],
                 ),
               ),
@@ -86,21 +89,24 @@ class OnboardingPage extends StatelessWidget {
 
 /// Estructura común: contenido desplazable + mensaje de error + botón.
 class _StepLayout extends StatelessWidget {
-  const _StepLayout({required this.children, this.buttonLabel = 'Continuar'});
+  const _StepLayout({required this.children, this.buttonLabel});
 
   final List<Widget> children;
-  final String buttonLabel;
+
+  /// Por defecto, "Continuar".
+  final String? buttonLabel;
 
   @override
   Widget build(BuildContext context) {
     final state = context.watch<OnboardingCubit>().state;
+    final l10n = context.l10n;
     return ListView(
       padding: const EdgeInsets.all(Spacing.lg),
       children: [
-        if (state.failureMessage != null) ...[
+        if (state.failure != null) ...[
           InlineMessage(
             key: const Key('onboarding_error'),
-            message: state.failureMessage!,
+            message: state.failure!.localized(l10n),
           ),
           const SizedBox(height: Spacing.md),
         ],
@@ -108,7 +114,7 @@ class _StepLayout extends StatelessWidget {
         const SizedBox(height: Spacing.lg),
         PrimaryButton(
           key: const Key('onboarding_next'),
-          label: buttonLabel,
+          label: buttonLabel ?? l10n.continueAction,
           loading: state.submitting,
           onPressed: () {
             FocusScope.of(context).unfocus();
@@ -160,6 +166,7 @@ class _FieldState extends State<_Field> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final error = context.select(
       (OnboardingCubit c) => c.state.visibleError(widget.field),
     );
@@ -185,13 +192,11 @@ class _FieldState extends State<_Field> {
           labelText: widget.label,
           helperText: widget.helperText,
           helperMaxLines: 2,
-          errorText: error,
+          errorText: error?.message(l10n),
           errorMaxLines: 2,
           suffixIcon: widget.obscure
               ? IconButton(
-                  tooltip: _hidden
-                      ? 'Mostrar contraseña'
-                      : 'Ocultar contraseña',
+                  tooltip: _hidden ? l10n.showPassword : l10n.hidePassword,
                   icon: Icon(_hidden ? Icons.visibility : Icons.visibility_off),
                   onPressed: () => setState(() => _hidden = !_hidden),
                 )
@@ -208,19 +213,20 @@ class _PersonalStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<OnboardingCubit>().state;
+    final l10n = context.l10n;
     final birthDate = state.birthDate;
     final birthError = state.visibleError(OnboardingField.birthDate);
     return _StepLayout(
       children: [
-        const _Field(
+        _Field(
           OnboardingField.fullName,
-          label: 'Nombre completo',
+          label: l10n.fullNameLabel,
           keyboardType: TextInputType.name,
-          autofillHints: [AutofillHints.name],
+          autofillHints: const [AutofillHints.name],
         ),
         _Field(
           OnboardingField.idNumber,
-          label: 'Cédula',
+          label: l10n.idNumberLabel,
           keyboardType: TextInputType.number,
           inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,
@@ -235,30 +241,24 @@ class _PersonalStep extends StatelessWidget {
             onTap: () => _pickDate(context, birthDate),
             child: InputDecorator(
               decoration: InputDecoration(
-                labelText: 'Fecha de nacimiento',
-                errorText: birthError,
+                labelText: l10n.birthDateLabel,
+                errorText: birthError?.message(l10n),
                 suffixIcon: const Icon(Icons.calendar_today_outlined),
               ),
-              child: Text(
-                birthDate == null
-                    ? ''
-                    : '${birthDate.day.toString().padLeft(2, '0')}/'
-                          '${birthDate.month.toString().padLeft(2, '0')}/'
-                          '${birthDate.year}',
-              ),
+              child: Text(birthDate == null ? '' : l10n.shortDate(birthDate)),
             ),
           ),
         ),
-        const _Field(
+        _Field(
           OnboardingField.email,
-          label: 'Correo electrónico',
+          label: l10n.emailLabel,
           keyboardType: TextInputType.emailAddress,
-          autofillHints: [AutofillHints.email],
+          autofillHints: const [AutofillHints.email],
         ),
         _Field(
           OnboardingField.phone,
-          label: 'Celular',
-          helperText: 'Ejemplo: 0991234567 o +593991234567',
+          label: l10n.phoneLabel,
+          helperText: l10n.phoneHelper,
           keyboardType: TextInputType.phone,
           autofillHints: const [AutofillHints.telephoneNumber],
           inputFormatters: [
@@ -278,7 +278,7 @@ class _PersonalStep extends StatelessWidget {
       initialDate: current ?? DateTime(now.year - 25, now.month, now.day),
       firstDate: DateTime(now.year - 100),
       lastDate: now,
-      helpText: 'Fecha de nacimiento',
+      helpText: context.l10n.birthDateLabel,
       initialEntryMode: DatePickerEntryMode.calendarOnly,
     );
     if (picked != null) cubit.birthDateChanged(picked);
@@ -290,26 +290,26 @@ class _CredentialsStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const AutofillGroup(
+    final l10n = context.l10n;
+    return AutofillGroup(
       child: _StepLayout(
         children: [
           _Field(
             OnboardingField.username,
-            label: 'Usuario',
-            helperText: 'Lo usarás para ingresar. Letras, números, "." o "_".',
-            autofillHints: [AutofillHints.newUsername],
+            label: l10n.usernameLabel,
+            helperText: l10n.usernameHelper,
+            autofillHints: const [AutofillHints.newUsername],
           ),
           _Field(
             OnboardingField.password,
-            label: 'Contraseña',
-            helperText:
-                'Mínimo 8 caracteres, con al menos una letra y un número.',
+            label: l10n.passwordLabel,
+            helperText: l10n.passwordHelper,
             obscure: true,
-            autofillHints: [AutofillHints.newPassword],
+            autofillHints: const [AutofillHints.newPassword],
           ),
           _Field(
             OnboardingField.confirmation,
-            label: 'Confirma la contraseña',
+            label: l10n.confirmPasswordLabel,
             obscure: true,
             isLast: true,
           ),
@@ -326,23 +326,18 @@ class _TermsStep extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = context.watch<OnboardingCubit>().state;
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final error = state.visibleError(OnboardingField.terms);
     return _StepLayout(
-      buttonLabel: 'Crear mi cuenta',
+      buttonLabel: l10n.createMyAccount,
       children: [
-        Text('Antes de terminar', style: theme.textTheme.titleMedium),
+        Text(l10n.termsTitle, style: theme.textTheme.titleMedium),
         const SizedBox(height: Spacing.sm),
-        const Card(
+        Card(
           margin: EdgeInsets.zero,
           child: Padding(
-            padding: EdgeInsets.all(Spacing.md),
-            child: Text(
-              'Al crear tu cuenta, Nexo Bank abrirá a tu nombre una cuenta de '
-              'ahorros sin costo de mantenimiento. Tus datos se usan solo para '
-              'identificarte y operar tus productos, se guardan cifrados y no '
-              'se comparten con terceros sin tu autorización. Puedes cerrar tu '
-              'cuenta en cualquier momento.',
-            ),
+            padding: const EdgeInsets.all(Spacing.md),
+            child: Text(l10n.termsBody),
           ),
         ),
         const SizedBox(height: Spacing.md),
@@ -356,12 +351,13 @@ class _TermsStep extends StatelessWidget {
                 ),
           controlAffinity: ListTileControlAffinity.leading,
           contentPadding: EdgeInsets.zero,
-          title: const Text(
-            'Acepto los términos y condiciones y la política de privacidad',
-          ),
+          title: Text(l10n.termsAccept),
           subtitle: error == null
               ? null
-              : Text(error, style: TextStyle(color: theme.colorScheme.error)),
+              : Text(
+                  error.message(l10n),
+                  style: TextStyle(color: theme.colorScheme.error),
+                ),
         ),
       ],
     );
@@ -375,6 +371,7 @@ class _WelcomeStep extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = context.watch<OnboardingCubit>().state;
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final firstName = state
         .value(OnboardingField.fullName)
         .trim()
@@ -393,22 +390,18 @@ class _WelcomeStep extends StatelessWidget {
         Semantics(
           liveRegion: true,
           child: Text(
-            '¡Listo, $firstName!',
+            l10n.welcomeTitle(firstName),
             key: const Key('onboarding_welcome'),
             textAlign: TextAlign.center,
             style: theme.textTheme.headlineSmall,
           ),
         ),
         const SizedBox(height: Spacing.sm),
-        const Text(
-          'Tu cuenta de ahorros ya está abierta. Desde ahora puedes ingresar '
-          'con tu usuario y contraseña.',
-          textAlign: TextAlign.center,
-        ),
+        Text(l10n.welcomeBody, textAlign: TextAlign.center),
         const SizedBox(height: Spacing.xl),
         PrimaryButton(
           key: const Key('onboarding_start'),
-          label: 'Comenzar',
+          label: l10n.start,
           onPressed: () =>
               context.read<SessionCubit>().authenticated(state.session!),
         ),
@@ -425,6 +418,6 @@ class CreateAccountLink extends StatelessWidget {
   Widget build(BuildContext context) => TextButton(
     key: const Key('login_create_account'),
     onPressed: () => context.push(Routes.register),
-    child: const Text('¿No tienes cuenta? Crea una'),
+    child: Text(context.l10n.createAccountLink),
   );
 }

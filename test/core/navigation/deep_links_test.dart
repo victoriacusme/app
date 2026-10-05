@@ -7,6 +7,8 @@ void main() {
     expect(DeepLinks.routeFor('app://accounts/abc-1'), '/accounts/abc-1');
     expect(DeepLinks.routeFor('app://profile'), '/profile');
     expect(DeepLinks.routeFor(DeepLinks.accountLink('x')), '/accounts/x');
+    // Push del backend tras una transferencia.
+    expect(DeepLinks.routeFor('app://transfers/t-1'), '/transfers/t-1');
   });
 
   test('lo desconocido o de otro esquema devuelve null', () {

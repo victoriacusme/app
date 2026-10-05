@@ -1,42 +1,57 @@
 import '../../../core/money/money.dart';
 import '../../accounts/domain/account.dart';
 
+/// Errores de validación del formulario de transferencia.
+enum TransferError {
+  sourceRequired,
+  sourceInactive,
+  targetRequired,
+  targetSameAsSource,
+  targetInactive,
+  currencyMismatch,
+  amountRequired,
+  amountInvalid,
+  amountNotPositive,
+  insufficientBalance,
+  descriptionTooLong,
+}
+
 /// Reglas que se validan en la app antes de enviar. El backend las vuelve
 /// a validar: estas solo evitan viajes inútiles y dan mensajes inmediatos.
 abstract final class TransferRules {
   static const maxDescriptionLength = 100;
 
-  static String? sourceError(Account? source) {
-    if (source == null) return 'Elige la cuenta de origen';
-    if (!source.isActive) return 'La cuenta de origen no está activa';
+  static TransferError? sourceError(Account? source) {
+    if (source == null) return TransferError.sourceRequired;
+    if (!source.isActive) return TransferError.sourceInactive;
     return null;
   }
 
-  static String? targetError(Account? source, Account? target) {
-    if (target == null) return 'Elige la cuenta de destino';
+  static TransferError? targetError(Account? source, Account? target) {
+    if (target == null) return TransferError.targetRequired;
     if (source != null && target.id == source.id) {
-      return 'El destino debe ser otra cuenta';
+      return TransferError.targetSameAsSource;
     }
-    if (!target.isActive) return 'La cuenta de destino no está activa';
+    if (!target.isActive) return TransferError.targetInactive;
     if (source != null && source.currency != target.currency) {
-      return 'Las cuentas tienen monedas distintas';
+      return TransferError.currencyMismatch;
     }
     return null;
   }
 
-  static String? amountError(Account? source, String text) {
-    if (text.trim().isEmpty) return 'Ingresa el monto';
+  static TransferError? amountError(Account? source, String text) {
+    if (text.trim().isEmpty) return TransferError.amountRequired;
     final cents = Money.tryParseCents(text);
-    if (cents == null) return 'Ingresa un monto válido, por ejemplo 25.50';
-    if (cents <= 0) return 'El monto debe ser mayor a cero';
+    if (cents == null) return TransferError.amountInvalid;
+    if (cents <= 0) return TransferError.amountNotPositive;
     if (source != null && cents > source.balance.cents) {
-      return 'Saldo insuficiente. Disponible: ${source.balance.format()}';
+      return TransferError.insufficientBalance;
     }
     return null;
   }
 
-  static String? descriptionError(String text) =>
+  static TransferError? descriptionError(String text) =>
       text.length > maxDescriptionLength
-      ? 'Máximo $maxDescriptionLength caracteres'
+      ? TransferError.descriptionTooLong
       : null;
 }

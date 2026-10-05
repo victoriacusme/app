@@ -22,4 +22,13 @@ class TransferRepositoryImpl implements TransferRepository {
       return Err(ErrorMapper.from(e));
     }
   }
+
+  @override
+  Future<Result<Transfer>> getTransfer(String id) async {
+    try {
+      return Ok(await _remote.getTransfer(id));
+    } catch (e) {
+      return Err(ErrorMapper.from(e));
+    }
+  }
 }

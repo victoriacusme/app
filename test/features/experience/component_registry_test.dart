@@ -19,7 +19,7 @@ void main() {
       registry.build(
         const ComponentSpec(
           id: '1',
-          type: 'greeting',
+          type: 'promo_banner',
           properties: {'title': 3},
         ),
       ),

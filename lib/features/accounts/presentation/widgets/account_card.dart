@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../design_system/design_system.dart';
+import '../../../../l10n/domain_l10n.dart';
+import '../../../../l10n/l10n.dart';
 import '../../domain/account.dart';
 
 class AccountCard extends StatelessWidget {
@@ -13,13 +15,19 @@ class AccountCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final l10n = context.l10n;
+    final name = account.displayName(l10n);
+    final type = account.typeLabel(l10n);
     return Semantics(
       button: onTap != null,
       label:
-          '${account.displayName}, ${account.typeLabel} '
-          'terminada en ${account.maskedNumber.replaceAll('*', '')}. '
-          'Saldo disponible ${account.balance.toSpeech()}'
-          '${account.isActive ? '' : '. Cuenta no activa'}',
+          l10n.accountSemantics(
+            name,
+            type,
+            account.maskedNumber.replaceAll('*', ''),
+            account.balance.speech(l10n),
+          ) +
+          (account.isActive ? '' : l10n.accountInactiveSuffix),
       excludeSemantics: true,
       child: Card(
         clipBehavior: Clip.antiAlias,
@@ -35,33 +43,33 @@ class AccountCard extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        account.displayName,
+                        name,
                         style: theme.textTheme.titleMedium,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     if (account.isDefault)
-                      _Chip(label: 'Principal', color: scheme.primary),
+                      _Chip(label: l10n.accountMain, color: scheme.primary),
                     if (!account.isActive)
-                      _Chip(label: 'No activa', color: scheme.error),
+                      _Chip(label: l10n.accountInactive, color: scheme.error),
                   ],
                 ),
                 const SizedBox(height: Spacing.xs),
                 Text(
-                  '${account.typeLabel} · ${account.maskedNumber}',
+                  '$type · ${account.maskedNumber}',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: Spacing.md),
                 Text(
-                  'Saldo disponible',
+                  l10n.availableBalance,
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
                 ),
                 Text(
-                  account.balance.format(),
+                  account.balance.formatL(l10n),
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),

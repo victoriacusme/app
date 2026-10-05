@@ -1,7 +1,9 @@
 import 'package:bloc_test/bloc_test.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:nexo_bank/app/app_settings_cubit.dart';
 import 'package:nexo_bank/core/connectivity/connectivity_cubit.dart';
 import 'package:nexo_bank/core/result/failure.dart';
 import 'package:nexo_bank/features/accounts/presentation/bloc/accounts_bloc.dart';
@@ -9,6 +11,8 @@ import 'package:nexo_bank/features/accounts/presentation/widgets/account_card.da
 import 'package:nexo_bank/features/experience/domain/experience_layout.dart';
 import 'package:nexo_bank/features/experience/presentation/experience_cubit.dart';
 import 'package:nexo_bank/features/experience/presentation/home_page.dart';
+import 'package:nexo_bank/core/time/app_clock.dart';
+import 'package:nexo_bank/features/customer/presentation/profile_bloc.dart';
 import 'package:nexo_bank/features/fx/presentation/fx_cubit.dart';
 
 import '../../helpers/accounts_fixtures.dart';
@@ -26,6 +30,7 @@ void main() {
   late _MockExperience experience;
   late _MockAccounts accounts;
   late _MockFx fx;
+  late MockProfileBloc profile;
 
   setUpAll(() => registerFallbackValue(const AccountsRequested()));
 
@@ -33,6 +38,10 @@ void main() {
     experience = _MockExperience();
     accounts = _MockAccounts();
     fx = _MockFx();
+    profile = profileOf('Ana');
+    // Saludo determinista: 15:00 → "Buenas tardes".
+    AppClock.now = () => DateTime(2026, 10, 4, 15);
+    addTearDown(() => AppClock.now = DateTime.now);
     when(() => accounts.state).thenReturn(
       AccountsState(
         status: AccountsStatus.loaded,
@@ -55,16 +64,21 @@ void main() {
     WidgetTester tester,
     ExperienceLayout? layout, {
     ConnectivityCubit? connectivity,
+    Locale locale = const Locale('es'),
+    AppSettingsCubit? settings,
   }) async {
     when(() => experience.state).thenReturn(layout);
     await pumpPage(
       tester,
       const HomePage(),
       connectivity: connectivity,
+      locale: locale,
+      settings: settings,
       providers: [
         BlocProvider<ExperienceCubit>.value(value: experience),
         BlocProvider<AccountsBloc>.value(value: accounts),
         BlocProvider<FxCubit>.value(value: fx),
+        BlocProvider<ProfileBloc>.value(value: profile),
       ],
     );
   }
@@ -164,7 +178,8 @@ void main() {
       ),
     );
 
-    expect(find.text('Hola'), findsOneWidget);
+    // El saludo lo arma la app, aunque el layout de respaldo diga "Hola".
+    expect(find.text('Buenas tardes, Ana'), findsOneWidget);
     expect(find.byType(AccountCard), findsOneWidget);
     expect(find.textContaining('No pudimos actualizar'), findsOneWidget);
   });
@@ -191,7 +206,7 @@ void main() {
     );
 
     expect(find.text('Tipo de cambio'), findsNothing);
-    expect(find.text('Hola, Carlos'), findsOneWidget);
+    expect(find.text('Buenas tardes, Ana'), findsOneWidget);
     expect(find.byType(AccountCard), findsNWidgets(2));
     verify(() => fx.load('USD')).called(1);
   });
@@ -215,5 +230,117 @@ void main() {
 
     verify(() => accounts.add(const AccountsRequested())).called(1);
     verify(() => experience.load()).called(1);
+  });
+
+  testWidgets(
+    'en inglés no se mezclan idiomas: las secciones y acciones conocidas '
+    'se traducen aunque el backend las mande en español',
+    (tester) async {
+      await pump(
+        tester,
+        ExperienceLayout(
+          screen: 'home',
+          segment: 'YOUNG',
+          components: [
+            // El saludo ya lo traduce el backend.
+            spec('greeting', {'title': 'Good afternoon, Ana'}),
+            spec('accounts_summary', {
+              'title': 'Tus cuentas',
+              'showTotal': true,
+            }),
+            spec('quick_actions', {
+              'actions': [
+                {
+                  'id': 'transfer',
+                  'icon': 'swap',
+                  'label': 'Transferir',
+                  'deeplink': 'app://transfers',
+                },
+                {
+                  'id': 'topup',
+                  'icon': 'phone',
+                  'label': 'Recargar celular',
+                  'deeplink': 'app://topups',
+                },
+              ],
+            }),
+            // Texto por idioma (formato que puede adoptar el backend).
+            spec('promo_banner', {
+              'title': {'es': 'Gana 5% extra', 'en': 'Earn 5% extra'},
+            }),
+          ],
+        ),
+        locale: const Locale('en'),
+      );
+
+      expect(find.text('Good afternoon, Ana'), findsOneWidget);
+      // "Meta: viaje" es un alias del cliente; la cuenta sin alias muestra el
+      // tipo traducido.
+      expect(find.text('Your accounts'), findsOneWidget);
+      expect(find.text(r'Total balance $3,618.20'), findsOneWidget);
+      expect(find.text(r'$3,092.70'), findsOneWidget);
+      expect(find.text('Available balance'), findsNWidgets(2));
+      expect(find.text('Savings account · ****0012'), findsOneWidget);
+      expect(find.text('Transfer'), findsOneWidget);
+      expect(find.text('Mobile top-up'), findsOneWidget);
+      await tester.scrollUntilVisible(find.text('Earn 5% extra'), 200);
+      expect(find.text('Earn 5% extra'), findsOneWidget);
+      for (final spanish in [
+        'Tus cuentas',
+        'Transferir',
+        'Saldo',
+        'Principal',
+      ]) {
+        expect(find.textContaining(spanish), findsNothing, reason: spanish);
+      }
+    },
+  );
+
+  group('recarga del layout por idioma', () {
+    Future<void> pumpWith(
+      WidgetTester tester,
+      AppSettings initial,
+      AppSettings next,
+    ) async {
+      final settings = MockAppSettingsCubit();
+      whenListen(settings, Stream.value(next), initialState: initial);
+      await pump(tester, youngHome, settings: settings);
+      await tester.pump();
+    }
+
+    testWidgets('al cambiar de idioma se vuelve a pedir el layout', (
+      tester,
+    ) async {
+      await pumpWith(
+        tester,
+        const AppSettings(locale: Locale('es')),
+        const AppSettings(locale: Locale('en')),
+      );
+
+      verify(() => experience.load()).called(1);
+    });
+
+    testWidgets('al cerrar sesión (idioma → null) NO se pide el layout: '
+        'saldría sin token y el backend respondería 401', (tester) async {
+      await pumpWith(
+        tester,
+        const AppSettings(locale: Locale('en')),
+        const AppSettings(),
+      );
+
+      verifyNever(() => experience.load());
+    });
+
+    testWidgets('al cargar las preferencias tras el login no se recarga', (
+      tester,
+    ) async {
+      await pumpWith(
+        tester,
+        const AppSettings(),
+        const AppSettings(locale: Locale('es')),
+      );
+
+      verifyNever(() => experience.load());
+    });
   });
 }

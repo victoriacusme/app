@@ -17,6 +17,7 @@ import '../features/experience/presentation/experience_cubit.dart';
 import '../features/experience/presentation/home_page.dart';
 import '../features/fx/presentation/fx_cubit.dart';
 import '../features/transfers/presentation/bloc/own_transfer_bloc.dart';
+import '../features/transfers/presentation/pages/transfer_detail_page.dart';
 import '../features/transfers/presentation/pages/transfer_page.dart';
 import 'app_lock_cubit.dart';
 import 'di.dart';
@@ -59,6 +60,7 @@ GoRouter createRouter(SessionCubit session, AppLockCubit lock) {
           experience: () => getIt<ExperienceCubit>(),
           accounts: () => getIt<AccountsBloc>(),
           fx: () => getIt<FxCubit>(),
+          profile: () => getIt<ProfileBloc>(),
           child: const HomePage(),
         ),
       ),
@@ -92,6 +94,15 @@ GoRouter createRouter(SessionCubit session, AppLockCubit lock) {
               ),
             ),
           child: const TransferPage(),
+        ),
+      ),
+      GoRoute(
+        path: '/transfers/:id',
+        builder: (_, state) => BlocProvider(
+          create: (_) =>
+              getIt<TransferDetailCubit>(param1: state.pathParameters['id'])
+                ..load(),
+          child: const TransferDetailPage(),
         ),
       ),
       GoRoute(

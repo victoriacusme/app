@@ -95,18 +95,19 @@ class AppLockCubit extends Cubit<AppLockState> {
     }
   }
 
-  Future<bool> unlock() async {
-    final ok = await _biometrics.authenticate('Desbloquea Nexo Bank');
+  /// [reason] es el texto del diálogo del sistema (traducido por la UI).
+  Future<bool> unlock({required String reason}) async {
+    final ok = await _biometrics.authenticate(reason);
     if (ok) emit(state.copyWith(locked: false));
     return ok;
   }
 
   /// Activar exige confirmar la identidad antes; desactivar no.
-  Future<bool> setEnabled({required bool enabled}) async {
-    if (enabled &&
-        !await _biometrics.authenticate(
-          'Confirma tu identidad para activarlo',
-        )) {
+  Future<bool> setEnabled({
+    required bool enabled,
+    required String reason,
+  }) async {
+    if (enabled && !await _biometrics.authenticate(reason)) {
       return false;
     }
     await _settings.setEnabled(enabled: enabled);

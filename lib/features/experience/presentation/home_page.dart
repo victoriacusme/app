@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/app_settings_cubit.dart';
 import '../../../app/routes.dart';
 import '../../../core/connectivity/connectivity_cubit.dart';
 import '../../../design_system/design_system.dart';
+import '../../../l10n/l10n.dart';
 import '../../accounts/presentation/bloc/accounts_bloc.dart';
 import '../../accounts/presentation/widgets/account_card.dart';
+import '../../customer/presentation/profile_bloc.dart';
 import '../../fx/presentation/fx_cubit.dart';
 import '../domain/experience_layout.dart';
 import 'component_registry.dart';
@@ -47,19 +50,34 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final components = registry ?? ComponentRegistry.defaults();
-    return BlocListener<ConnectivityCubit, ConnectivityStatus>(
-      // Al recuperar la red, todo el home se refresca solo.
-      listenWhen: (prev, curr) =>
-          prev == ConnectivityStatus.offline &&
-          curr == ConnectivityStatus.online,
-      listener: (context, _) => _refresh(context),
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<ConnectivityCubit, ConnectivityStatus>(
+          // Al recuperar la red, todo el home se refresca solo.
+          listenWhen: (prev, curr) =>
+              prev == ConnectivityStatus.offline &&
+              curr == ConnectivityStatus.online,
+          listener: (context, _) => _refresh(context),
+        ),
+        BlocListener<AppSettingsCubit, AppSettings>(
+          // Solo ante un cambio real de idioma (es → en o en → es) se pide
+          // otra vez el layout. Al cerrar sesión el idioma pasa a `null`: ahí
+          // no se recarga, porque los tokens ya no existen y la llamada saldría
+          // sin autenticación (el backend respondería 401).
+          listenWhen: (prev, curr) =>
+              prev.locale != null &&
+              curr.locale != null &&
+              prev.locale != curr.locale,
+          listener: (context, _) => context.read<ExperienceCubit>().load(),
+        ),
+      ],
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Nexo Bank'),
+          title: Text(context.l10n.appTitle),
           actions: [
             IconButton(
               key: const Key('home_profile'),
-              tooltip: 'Mi perfil',
+              tooltip: context.l10n.profileTitle,
               icon: const Icon(Icons.person_outline),
               onPressed: () => context.push(Routes.profile),
             ),
@@ -109,6 +127,7 @@ class HomeScope extends StatelessWidget {
     required this.experience,
     required this.accounts,
     required this.fx,
+    required this.profile,
     required this.child,
     super.key,
   });
@@ -116,6 +135,9 @@ class HomeScope extends StatelessWidget {
   final ExperienceCubit Function() experience;
   final AccountsBloc Function() accounts;
   final FxCubit Function() fx;
+
+  /// Perfil del cliente: el saludo usa su nombre.
+  final ProfileBloc Function() profile;
   final Widget child;
 
   @override
@@ -124,6 +146,7 @@ class HomeScope extends StatelessWidget {
       BlocProvider(create: (_) => experience()..load()),
       BlocProvider(create: (_) => accounts()..add(const AccountsRequested())),
       BlocProvider(create: (_) => fx()),
+      BlocProvider(create: (_) => profile()..add(const ProfileRequested())),
     ],
     child: child,
   );

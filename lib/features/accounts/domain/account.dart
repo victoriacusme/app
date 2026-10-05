@@ -30,15 +30,6 @@ class Account extends Equatable {
   String get currency => balance.currency;
   bool get isActive => status == AccountStatus.active;
 
-  String get typeLabel => switch (type) {
-    AccountType.savings => 'Cuenta de ahorros',
-    AccountType.checking => 'Cuenta corriente',
-    AccountType.unknown => 'Cuenta',
-  };
-
-  /// Nombre para mostrar: el alias o, si no hay, el tipo.
-  String get displayName => alias?.isNotEmpty ?? false ? alias! : typeLabel;
-
   @override
   List<Object?> get props => [
     id,

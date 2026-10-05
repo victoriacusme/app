@@ -58,23 +58,25 @@ class LocalNotificationsService {
     required int id,
     required String title,
     required String body,
+    required String channelName,
+    required String channelDescription,
     String? deepLink,
   }) => _plugin.show(
     id: id,
     title: title,
     body: body,
     payload: deepLink,
-    notificationDetails: const NotificationDetails(
+    notificationDetails: NotificationDetails(
       android: AndroidNotificationDetails(
         'transfers',
-        'Transferencias',
-        channelDescription: 'Avisos de tus transferencias',
+        channelName,
+        channelDescription: channelDescription,
         importance: Importance.high,
         priority: Priority.high,
         // En la pantalla de bloqueo no se muestra el contenido.
         visibility: NotificationVisibility.private,
       ),
-      iOS: DarwinNotificationDetails(),
+      iOS: const DarwinNotificationDetails(),
     ),
   );
 }

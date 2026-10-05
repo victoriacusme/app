@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
+
 /// Campo de texto del design system. Con [obscure] agrega el botón para
 /// mostrar u ocultar el contenido.
 class AppTextField extends StatefulWidget {
@@ -54,7 +56,9 @@ class _AppTextFieldState extends State<AppTextField> {
         prefixIcon: widget.prefixIcon == null ? null : Icon(widget.prefixIcon),
         suffixIcon: widget.obscure
             ? IconButton(
-                tooltip: _hidden ? 'Mostrar contraseña' : 'Ocultar contraseña',
+                tooltip: _hidden
+                    ? context.l10n.showPassword
+                    : context.l10n.hidePassword,
                 icon: Icon(_hidden ? Icons.visibility : Icons.visibility_off),
                 onPressed: () => setState(() => _hidden = !_hidden),
               )

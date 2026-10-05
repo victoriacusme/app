@@ -60,13 +60,6 @@ class CustomerProfile extends Equatable {
   final Segment segment;
   final Preferences preferences;
 
-  String get segmentLabel => switch (segment) {
-    Segment.young => 'Joven',
-    Segment.premium => 'Premium',
-    Segment.entrepreneur => 'Emprendedor',
-    Segment.standard => 'Personas',
-  };
-
   CustomerProfile withPreferences(Preferences preferences) => CustomerProfile(
     id: id,
     fullName: fullName,

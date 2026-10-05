@@ -53,21 +53,12 @@ class Money extends Equatable implements Comparable<Money> {
     return '$sign${abs ~/ 100}.${(abs % 100).toString().padLeft(2, '0')}';
   }
 
-  static final _number = NumberFormat('#,##0.00', 'es');
-
-  /// Formato para mostrar: `$1.250,50`, `-$10,00`, `+$10,00`.
-  String format({bool signed = false}) {
-    final text = '${_symbol(currency)}${_number.format(cents.abs() / 100)}';
+  /// Formato para mostrar: `$1.250,50` (es) o `$1,250.50` (en).
+  String format({bool signed = false, String locale = 'es'}) {
+    final number = NumberFormat('#,##0.00', locale);
+    final text = '${_symbol(currency)}${number.format(cents.abs() / 100)}';
     if (cents < 0) return '-$text';
     return signed && cents > 0 ? '+$text' : text;
-  }
-
-  /// Texto para lectores de pantalla: "1250 dólares con 50 centavos".
-  String toSpeech() {
-    final abs = cents.abs();
-    final unit = currency == 'USD' ? 'dólares' : currency;
-    final sign = cents < 0 ? 'menos ' : '';
-    return '$sign${abs ~/ 100} $unit con ${abs % 100} centavos';
   }
 
   static String _symbol(String currency) => switch (currency) {

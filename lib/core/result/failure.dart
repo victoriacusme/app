@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
-/// Error tipado que la UI sabe mostrar.
+/// Error tipado. La UI no muestra [message]: traduce el error con
+/// `Failure.localized` según su tipo y [code]. [message] es técnico (logs).
 ///
 /// [code] es el `code` estable del `ProblemDetail` del backend
 /// (por ejemplo `invalid-credentials` o `user-locked`).
@@ -26,14 +27,14 @@ sealed class Failure extends Equatable {
 /// No hubo respuesta del servidor (sin red, DNS, conexión rechazada).
 final class NetworkFailure extends Failure {
   const NetworkFailure({
-    super.message = 'No pudimos conectarnos. Revisa tu conexión.',
+    super.message = 'Network unreachable',
     super.correlationId,
   });
 }
 
 final class TimeoutFailure extends Failure {
   const TimeoutFailure({
-    super.message = 'El servidor tardó demasiado en responder.',
+    super.message = 'Request timed out',
     super.correlationId,
   });
 }
@@ -67,7 +68,7 @@ final class ValidationFailure extends Failure {
 /// Cualquier otra respuesta de error del servidor (403, 404, 409, 423, 5xx).
 final class ServerFailure extends Failure {
   const ServerFailure({
-    super.message = 'Ocurrió un error inesperado. Intenta nuevamente.',
+    super.message = 'Unexpected server error',
     super.code,
     super.statusCode,
     super.correlationId,

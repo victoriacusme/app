@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
@@ -6,24 +7,35 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../features/customer/domain/customer_profile.dart';
 import '../features/customer/domain/customer_repository.dart';
+import '../l10n/l10n.dart';
 import 'session_cubit.dart';
 
 final class AppSettings extends Equatable {
   const AppSettings({
     this.themeMode = ThemeMode.system,
     this.notificationsEnabled = true,
+    this.locale,
   });
 
   final ThemeMode themeMode;
   final bool notificationsEnabled;
 
+  /// Idioma elegido por el cliente. `null` = el del dispositivo (antes de
+  /// iniciar sesión o si no hay preferencia).
+  final Locale? locale;
+
+  /// Idioma efectivo de la app (`es` o `en`).
+  String get languageCode => AppLanguages.resolve(
+    locale?.languageCode ?? PlatformDispatcher.instance.locale.languageCode,
+  );
+
   @override
-  List<Object?> get props => [themeMode, notificationsEnabled];
+  List<Object?> get props => [themeMode, notificationsEnabled, locale];
 }
 
-/// Aplica en toda la app las preferencias del cliente (tema y avisos).
-/// Al iniciar sesión carga el perfil (primero de la caché) y al cerrarla
-/// vuelve a los valores por defecto.
+/// Aplica en toda la app las preferencias del cliente (tema, idioma y
+/// avisos). Al iniciar sesión carga el perfil (primero de la caché) y al
+/// cerrarla vuelve a los valores por defecto.
 class AppSettingsCubit extends Cubit<AppSettings> {
   AppSettingsCubit({
     required SessionCubit session,
@@ -42,7 +54,7 @@ class AppSettingsCubit extends Cubit<AppSettings> {
   void _onSession(SessionState state) {
     switch (state) {
       case SessionAuthenticated():
-        // Los errores se ignoran: el tema no bloquea el uso de la app.
+        // Los errores se ignoran: las preferencias no bloquean la app.
         unawaited(_customers.watchProfile().drain<void>());
       case SessionUnauthenticated():
         emit(const AppSettings());
@@ -59,6 +71,7 @@ class AppSettingsCubit extends Cubit<AppSettings> {
         ThemePreference.system => ThemeMode.system,
       },
       notificationsEnabled: p.notificationsEnabled,
+      locale: Locale(AppLanguages.resolve(p.language)),
     ),
   );
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/routes.dart';
+import '../../l10n/l10n.dart';
 
 /// Traduce los enlaces `app://...` del SDUI y de las notificaciones a rutas
 /// de la app. Lo que no se reconoce devuelve `null`.
@@ -15,6 +16,8 @@ abstract final class DeepLinks {
     final segments = [uri.host, ...uri.pathSegments.where((s) => s.isNotEmpty)];
     return switch (segments) {
       ['transfers' || 'transfer'] => Routes.transfer,
+      // Push del backend tras una transferencia: app://transfers/{id}.
+      ['transfers', final id] => Routes.transferDetail(id),
       ['accounts', final id] => Routes.account(id),
       ['profile'] => Routes.profile,
       ['home'] => Routes.home,
@@ -31,8 +34,6 @@ abstract final class DeepLinks {
     }
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(
-        const SnackBar(content: Text('Esta función estará disponible pronto.')),
-      );
+      ..showSnackBar(SnackBar(content: Text(context.l10n.comingSoon)));
   }
 }

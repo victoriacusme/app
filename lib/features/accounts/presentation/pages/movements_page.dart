@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/routes.dart';
 import '../../../../core/connectivity/connectivity_cubit.dart';
 import '../../../../design_system/design_system.dart';
+import '../../../../l10n/domain_l10n.dart';
+import '../../../../l10n/l10n.dart';
 import '../../domain/account.dart';
 import '../../domain/movement.dart';
 import '../bloc/accounts_bloc.dart';
@@ -72,20 +74,24 @@ class _MovementsPageState extends State<MovementsPage> {
           curr == ConnectivityStatus.online,
       listener: (_, _) => _refresh(),
       child: Scaffold(
-        appBar: AppBar(title: Text(account?.displayName ?? 'Movimientos')),
+        appBar: AppBar(
+          title: Text(
+            account?.displayName(context.l10n) ?? context.l10n.movementsTitle,
+          ),
+        ),
         floatingActionButton: account != null && account.isActive
             ? FloatingActionButton.extended(
                 onPressed: () =>
                     context.push(Routes.transferFrom(widget.accountId)),
                 icon: const Icon(Icons.swap_horiz),
-                label: const Text('Transferir'),
+                label: Text(context.l10n.transferAction),
               )
             : null,
         body: BlocBuilder<MovementsBloc, MovementsState>(
           builder: (context, state) {
             if (state.status == MovementsStatus.failure) {
               return ErrorView(
-                message: state.failure!.message,
+                message: state.failure!.localized(context.l10n),
                 correlationId: state.failure!.correlationId,
                 onRetry: () => context.read<MovementsBloc>().add(
                   const MovementsRequested(),
@@ -138,17 +144,17 @@ class _MovementsPageState extends State<MovementsPage> {
       ];
     }
     if (state.items.isEmpty) {
-      return const [
+      return [
         SliverFillRemaining(
           hasScrollBody: false,
           child: EmptyView(
-            message: 'Esta cuenta aún no tiene movimientos.',
+            message: context.l10n.noMovements,
             icon: Icons.receipt_long_outlined,
           ),
         ),
       ];
     }
-    final rows = _groupByDay(state.items);
+    final rows = _groupByDay(state.items, context.l10n);
     return [
       SliverList.builder(
         itemCount: rows.length,
@@ -177,11 +183,11 @@ class _MovementsPageState extends State<MovementsPage> {
   }
 
   /// Intercala encabezados de día ("Hoy", "Ayer", fecha) con movimientos.
-  static List<Object> _groupByDay(List<Movement> items) {
+  static List<Object> _groupByDay(List<Movement> items, AppLocalizations l10n) {
     final rows = <Object>[];
     String? current;
     for (final m in items) {
-      final header = DateTexts.dayHeader(m.bookedAt);
+      final header = l10n.dayHeader(m.bookedAt);
       if (header != current) {
         rows.add(header);
         current = header;
@@ -201,18 +207,20 @@ class _Footer extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget child;
     if (state.loadingMore) {
-      child = const CircularProgressIndicator(semanticsLabel: 'Cargando más');
+      child = CircularProgressIndicator(
+        semanticsLabel: context.l10n.loadingMore,
+      );
     } else if (state.loadMoreFailure != null) {
       child = TextButton.icon(
         onPressed: () => context.read<MovementsBloc>().add(
           const MovementsNextPageRequested(),
         ),
         icon: const Icon(Icons.refresh),
-        label: const Text('No pudimos cargar más. Reintentar'),
+        label: Text(context.l10n.loadMoreFailed),
       );
     } else if (!state.hasMore) {
       child = Text(
-        'No hay más movimientos',
+        context.l10n.noMoreMovements,
         style: Theme.of(context).textTheme.bodySmall,
       );
     } else {

@@ -67,4 +67,25 @@ void main() {
     expect: () => const [SessionUnauthenticated(expired: true)],
     verify: (_) => expect(clears, 1),
   );
+
+  test(
+    'desregistra el push antes de cerrar sesión y lo registra al entrar',
+    () async {
+      final calls = <String>[];
+      when(() => logout()).thenAnswer((_) async => calls.add('logout'));
+      final cubit = SessionCubit(
+        restoreSession: restore,
+        logout: logout,
+        clearUserData: () async => calls.add('clear'),
+        onSignedIn: () async => calls.add('register'),
+        onSigningOut: () async => calls.add('unregister'),
+      );
+
+      cubit.authenticated(session);
+      await Future<void>.delayed(Duration.zero);
+      await cubit.logout();
+
+      expect(calls, ['register', 'unregister', 'logout', 'clear']);
+    },
+  );
 }

@@ -1,0 +1,482 @@
+{
+  "@@locale": "es",
+  "appTitle": "Nexo Bank",
+  "loading": "Cargando",
+  "loadingMore": "Cargando más",
+  "retry": "Reintentar",
+  "supportCode": "Código de soporte: {code}",
+  "@supportCode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "continueAction": "Continuar",
+  "comingSoon": "Esta función estará disponible pronto.",
+  "showPassword": "Mostrar contraseña",
+  "hidePassword": "Ocultar contraseña",
+  "buttonLoading": "{label}, cargando",
+  "@buttonLoading": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineBanner": "Sin conexión. Verás los últimos datos guardados.",
+  "staleRefreshFailed": "No pudimos actualizar. Mostrando datos de {age}.",
+  "@staleRefreshFailed": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      }
+    }
+  },
+  "staleRefreshing": "Datos de {age}. Actualizando…",
+  "@staleRefreshing": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      }
+    }
+  },
+  "relativeNow": "hace un momento",
+  "relativeMinutes": "hace {count} min",
+  "@relativeMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "relativeHours": "hace {count} h",
+  "@relativeHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "relativeDays": "{count, plural, =1{hace 1 día} other{hace {count} días}}",
+  "@relativeDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "today": "Hoy",
+  "yesterday": "Ayer",
+  "moneySpeechUsd": "{units} dólares con {cents} centavos",
+  "@moneySpeechUsd": {
+    "placeholders": {
+      "units": {
+        "type": "int"
+      },
+      "cents": {
+        "type": "int"
+      }
+    }
+  },
+  "moneySpeechOther": "{units} {currency} con {cents} centavos",
+  "@moneySpeechOther": {
+    "placeholders": {
+      "units": {
+        "type": "int"
+      },
+      "cents": {
+        "type": "int"
+      },
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "moneySpeechNegative": "menos {amount}",
+  "@moneySpeechNegative": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "maxChars": "Máximo {max} caracteres",
+  "@maxChars": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "errorNetwork": "No pudimos conectarnos. Revisa tu conexión.",
+  "errorTimeout": "El servidor tardó demasiado en responder.",
+  "errorServiceUnavailable": "El servicio no está disponible en este momento. Intenta nuevamente en unos segundos.",
+  "errorRateLimited": "Demasiadas solicitudes. Espera un momento e intenta nuevamente.",
+  "errorSession": "Tu sesión no es válida. Ingresa nuevamente.",
+  "errorValidation": "Revisa los datos ingresados.",
+  "errorNotFound": "No encontramos lo que buscabas.",
+  "errorUnexpected": "Ocurrió un error inesperado. Intenta nuevamente.",
+  "loginWelcome": "Bienvenido a Nexo",
+  "loginSessionExpired": "Tu sesión expiró. Ingresa nuevamente.",
+  "usernameLabel": "Usuario",
+  "passwordLabel": "Contraseña",
+  "loginSubmit": "Ingresar",
+  "loginInvalidCredentials": "Usuario o contraseña incorrectos.",
+  "loginLocked": "Tu usuario está bloqueado por varios intentos fallidos. Comunícate con soporte para desbloquearlo.",
+  "usernameRequired": "Ingresa tu usuario",
+  "passwordRequired": "Ingresa tu contraseña",
+  "createAccountLink": "¿No tienes cuenta? Crea una",
+  "lockedTitle": "Nexo Bank está bloqueado",
+  "lockedFailed": "No pudimos verificar tu identidad.",
+  "lockedHint": "Usa tu huella o rostro para continuar.",
+  "unlock": "Desbloquear",
+  "lockedUsePassword": "Ingresar con mi contraseña",
+  "biometricUnlockReason": "Desbloquea Nexo Bank",
+  "biometricEnableReason": "Confirma tu identidad para activarlo",
+  "onboardingStepPersonal": "Tus datos",
+  "onboardingStepCredentials": "Tu usuario",
+  "onboardingStepTerms": "Términos",
+  "onboardingStepWelcome": "Bienvenido",
+  "onboardingStepOf": "Paso {current} de {total}",
+  "@onboardingStepOf": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "fullNameLabel": "Nombre completo",
+  "idNumberLabel": "Cédula",
+  "birthDateLabel": "Fecha de nacimiento",
+  "emailLabel": "Correo electrónico",
+  "phoneLabel": "Celular",
+  "phoneHelper": "Ejemplo: 0991234567 o +593991234567",
+  "usernameHelper": "Lo usarás para ingresar. Letras, números, \".\" o \"_\".",
+  "passwordHelper": "Mínimo 8 caracteres, con al menos una letra y un número.",
+  "confirmPasswordLabel": "Confirma la contraseña",
+  "createMyAccount": "Crear mi cuenta",
+  "termsTitle": "Antes de terminar",
+  "termsBody": "Al crear tu cuenta, Nexo Bank abrirá a tu nombre una cuenta de ahorros sin costo de mantenimiento. Tus datos se usan solo para identificarte y operar tus productos, se guardan cifrados y no se comparten con terceros sin tu autorización. Puedes cerrar tu cuenta en cualquier momento.",
+  "termsAccept": "Acepto los términos y condiciones y la política de privacidad",
+  "welcomeTitle": "¡Listo, {name}!",
+  "@welcomeTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "welcomeBody": "Tu cuenta de ahorros ya está abierta. Desde ahora puedes ingresar con tu usuario y contraseña.",
+  "start": "Comenzar",
+  "regFullNameRequired": "Ingresa tu nombre completo",
+  "regFullNameSurname": "Ingresa nombre y apellido",
+  "regIdNumber": "La cédula debe tener 10 dígitos",
+  "regBirthDateRequired": "Elige tu fecha de nacimiento",
+  "regBirthDateFuture": "La fecha debe ser anterior a hoy",
+  "regUnderage": "Debes ser mayor de edad",
+  "regEmailRequired": "Ingresa tu correo",
+  "regEmailInvalid": "Correo no válido",
+  "regPhoneInvalid": "Teléfono no válido (9 a 15 dígitos)",
+  "regUsernameInvalid": "Entre 3 y 30 letras, números, \".\" o \"_\"",
+  "regPasswordTooShort": "Mínimo {min} caracteres",
+  "@regPasswordTooShort": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "regPasswordWeak": "Debe tener al menos una letra y un número",
+  "regPasswordMismatch": "Las contraseñas no coinciden",
+  "regTermsRequired": "Debes aceptar los términos para continuar",
+  "regUsernameTaken": "Ese usuario ya existe. Elige otro.",
+  "regServerInvalid": "Revisa este dato",
+  "onboardingUnavailable": "No pudimos completar el registro en este momento. Intenta nuevamente en unos minutos.",
+  "accountTypeSavings": "Cuenta de ahorros",
+  "accountTypeChecking": "Cuenta corriente",
+  "accountTypeGeneric": "Cuenta",
+  "accountMain": "Principal",
+  "accountInactive": "No activa",
+  "availableBalance": "Saldo disponible",
+  "accountSemantics": "{name}, {type} terminada en {last4}. Saldo disponible {balance}",
+  "@accountSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "type": {
+        "type": "String"
+      },
+      "last4": {
+        "type": "String"
+      },
+      "balance": {
+        "type": "String"
+      }
+    }
+  },
+  "accountInactiveSuffix": ". Cuenta no activa",
+  "yourAccounts": "Tus cuentas",
+  "totalBalance": "Saldo total {amount}",
+  "@totalBalance": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "noAccounts": "Todavía no tienes cuentas.",
+  "movementCredit": "Crédito",
+  "movementDebit": "Débito",
+  "movementIncoming": "ingreso",
+  "movementOutgoing": "egreso",
+  "movementSemantics": "{description}, {kind} de {amount}, {time}",
+  "@movementSemantics": {
+    "placeholders": {
+      "description": {
+        "type": "String"
+      },
+      "kind": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "movementSubtitle": "{time} · Saldo {balance}",
+  "@movementSubtitle": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "balance": {
+        "type": "String"
+      }
+    }
+  },
+  "movementsTitle": "Movimientos",
+  "noMovements": "Esta cuenta aún no tiene movimientos.",
+  "loadMoreFailed": "No pudimos cargar más. Reintentar",
+  "noMoreMovements": "No hay más movimientos",
+  "profileTitle": "Mi perfil",
+  "segmentYoung": "Joven",
+  "segmentPremium": "Premium",
+  "segmentEntrepreneur": "Emprendedor",
+  "segmentStandard": "Personas",
+  "customerSegment": "Cliente {segment}",
+  "@customerSegment": {
+    "placeholders": {
+      "segment": {
+        "type": "String"
+      }
+    }
+  },
+  "emailTitle": "Correo",
+  "phoneTitle": "Celular",
+  "preferences": "Preferencias",
+  "theme": "Tema",
+  "themeLight": "Claro",
+  "themeDark": "Oscuro",
+  "themeSystem": "Sistema",
+  "language": "Idioma",
+  "languageSpanish": "Español",
+  "languageEnglish": "English",
+  "notifications": "Notificaciones",
+  "notificationsSubtitle": "Avisos de tus transferencias",
+  "promotions": "Promociones",
+  "promotionsSubtitle": "Ver ofertas en tu inicio",
+  "logout": "Cerrar sesión",
+  "biometricToggle": "Ingresar con huella o rostro",
+  "biometricToggleSubtitle": "Solo en este dispositivo",
+  "saveFailed": "No pudimos guardar el cambio. {reason}",
+  "@saveFailed": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "fxTitle": "Tipo de cambio",
+  "fxReference": "Referencial · {age}",
+  "@fxReference": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      }
+    }
+  },
+  "fxStale": "Referencial · no pudimos actualizar",
+  "promoSemantics": "Promoción: {text}",
+  "@promoSemantics": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "savingsSemantics": "{title}. Llevas {saved} de {target}, {percent} por ciento",
+  "@savingsSemantics": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "saved": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "savingsProgress": "{saved} de {target}",
+  "@savingsProgress": {
+    "placeholders": {
+      "saved": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "quickActionTransfer": "Transferir",
+  "quickActionTopup": "Recargar celular",
+  "quickActionGoals": "Mis metas",
+  "quickActionInvest": "Inversiones",
+  "quickActionAdvisor": "Mi asesor",
+  "quickActionCollect": "Cobrar con QR",
+  "quickActionSuppliers": "Pagar proveedores",
+  "quickActionProfile": "Mi perfil",
+  "transferTitle": "Transferir",
+  "transferAction": "Transferir",
+  "transferBetweenMyAccounts": "Transferir entre mis cuentas",
+  "confirmTitle": "Confirmar",
+  "receiptTitle": "Comprobante",
+  "transferOffline": "Sin conexión. Las transferencias necesitan internet: no se guardan para enviarse después.",
+  "transferNeedTwoAccounts": "Necesitas al menos dos cuentas activas, y una con saldo, para transferir entre tus cuentas.",
+  "fromLabel": "Desde",
+  "toLabel": "Hacia",
+  "amountLabel": "Monto",
+  "availableAmount": "Disponible: {amount}",
+  "@availableAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "descriptionOptional": "Descripción (opcional)",
+  "description": "Descripción",
+  "reviewBeforeConfirm": "Revisa los datos antes de confirmar",
+  "balanceAfter": "Saldo después",
+  "confirmTransfer": "Confirmar transferencia",
+  "edit": "Editar",
+  "transferDone": "Transferencia realizada",
+  "date": "Fecha",
+  "receiptNumber": "Comprobante",
+  "backHome": "Volver al inicio",
+  "anotherTransfer": "Hacer otra transferencia",
+  "transferRejectedTitle": "No se realizó la transferencia",
+  "fixData": "Corregir datos",
+  "transferUnknownTitle": "No pudimos confirmar el resultado",
+  "transferUnknownBody": "La conexión se interrumpió y no sabemos si la transferencia se procesó. No la vuelvas a crear: toca \"Verificar estado\" y, si ya se hizo, verás el comprobante sin que se repita.",
+  "checkStatus": "Verificar estado",
+  "goHome": "Ir al inicio",
+  "transferSourceRequired": "Elige la cuenta de origen",
+  "transferSourceInactive": "La cuenta de origen no está activa",
+  "transferTargetRequired": "Elige la cuenta de destino",
+  "transferTargetSame": "El destino debe ser otra cuenta",
+  "transferTargetInactive": "La cuenta de destino no está activa",
+  "transferCurrencyMismatch": "Las cuentas tienen monedas distintas",
+  "transferAmountRequired": "Ingresa el monto",
+  "transferAmountInvalid": "Ingresa un monto válido, por ejemplo 25.50",
+  "transferAmountNotPositive": "El monto debe ser mayor a cero",
+  "transferInsufficient": "Saldo insuficiente. Disponible: {amount}",
+  "@transferInsufficient": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "rejectInsufficient": "Saldo insuficiente en {account}.",
+  "@rejectInsufficient": {
+    "placeholders": {
+      "account": {
+        "type": "String"
+      }
+    }
+  },
+  "rejectAccountNotActive": "Una de las cuentas no está activa.",
+  "rejectSameAccount": "El origen y el destino deben ser cuentas distintas.",
+  "rejectCurrencyMismatch": "Las cuentas tienen monedas distintas.",
+  "rejectAccountNotFound": "No encontramos una de las cuentas.",
+  "transferNotFound": "No encontramos esta transferencia.",
+  "ownAccount": "Cuenta propia",
+  "status": "Estado",
+  "statusCompleted": "Completada",
+  "statusPending": "En revisión",
+  "notificationTransferTitle": "Transferencia realizada",
+  "notificationTransferBody": "Enviaste {amount} de {from} a {to}.",
+  "@notificationTransferBody": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationChannelName": "Transferencias",
+  "notificationChannelDescription": "Avisos de tus transferencias",
+  "greetingMorning": "Buenos días",
+  "greetingAfternoon": "Buenas tardes",
+  "greetingEvening": "Buenas noches",
+  "greetingWithName": "{greeting}, {name}",
+  "@greetingWithName": {
+    "placeholders": {
+      "greeting": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "aliasSavings": "Ahorros",
+  "aliasChecking": "Corriente",
+  "aliasInvestments": "Inversiones",
+  "aliasBusiness": "Negocio",
+  "aliasPersonal": "Personal",
+  "savingsGoal": "Meta de ahorro",
+  "promoSavingsTitle": "Gana 5% extra en tu primera meta",
+  "promoSavingsSubtitle": "Solo este mes",
+  "promoAdvisorTitle": "Asesoría de inversiones sin costo",
+  "promoAdvisorSubtitle": "Agenda con tu asesor",
+  "promoCreditTitle": "Crédito para tu negocio",
+  "promoCreditSubtitle": "Pre-aprobado hasta {amount}",
+  "@promoCreditSubtitle": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "promoTransfersTitle": "Black Friday Nexo",
+  "promoTransfersSubtitle": "0% de comisión en todas tus transferencias"
+}

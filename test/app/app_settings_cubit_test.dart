@@ -41,7 +41,11 @@ void main() {
       ),
     ),
     expect: () => const [
-      AppSettings(themeMode: ThemeMode.dark, notificationsEnabled: false),
+      AppSettings(
+        themeMode: ThemeMode.dark,
+        notificationsEnabled: false,
+        locale: Locale('es'),
+      ),
     ],
   );
 
@@ -54,7 +58,20 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       sessionStates.add(const SessionUnauthenticated());
     },
-    expect: () => const [AppSettings(themeMode: ThemeMode.dark), AppSettings()],
+    expect: () => const [
+      AppSettings(themeMode: ThemeMode.dark, locale: Locale('es')),
+      AppSettings(),
+    ],
     verify: (_) => verify(customers.watchProfile).called(1),
+  );
+
+  blocTest<AppSettingsCubit, AppSettings>(
+    'el idioma de la preferencia del cliente se aplica a toda la app',
+    build: () => AppSettingsCubit(session: session, customers: customers),
+    act: (_) => prefs.add(const Preferences(language: 'en')),
+    verify: (c) {
+      expect(c.state.locale, const Locale('en'));
+      expect(c.state.languageCode, 'en');
+    },
   );
 }

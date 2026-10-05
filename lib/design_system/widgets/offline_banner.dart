@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
 import '../tokens.dart';
 
 /// Banner global que se muestra arriba de toda la app sin conexión.
@@ -26,7 +27,7 @@ class OfflineBanner extends StatelessWidget {
                 const SizedBox(width: Spacing.sm),
                 Expanded(
                   child: Text(
-                    'Sin conexión. Verás los últimos datos guardados.',
+                    context.l10n.offlineBanner,
                     style: TextStyle(color: scheme.onInverseSurface),
                   ),
                 ),

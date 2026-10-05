@@ -52,7 +52,7 @@ flutter test
 # E2E en un emulador o dispositivo, contra el backend real:
 #  1) login → home → movimientos
 #  2) login → transferencia propia → los saldos cambian (devuelve el dinero)
-flutter test integration_test/login_movements_test.dart integration_test/own_transfer_test.dart -d emulator-5554
+flutter test integration_test/login_movements_test.dart integration_test/own_transfer_test.dart integration_test/language_test.dart -d emulator-5554
 
 # Regenerar las capturas de docs/screenshots
 flutter drive --driver=test_driver/integration_test.dart \
@@ -123,6 +123,37 @@ el `ComponentRegistry` traduce cada `type` a un widget:
 
 Deep links soportados: `app://transfers`, `app://accounts/{id}`,
 `app://profile`, `app://home`. Los demás muestran "disponible pronto".
+
+## Idiomas (español e inglés)
+
+Toda la app está traducida con `gen-l10n` (`lib/l10n/app_es.arb` y
+`app_en.arb`):
+
+- Antes de iniciar sesión se usa el idioma del teléfono (si no es español ni
+  inglés, español). Con sesión, el idioma de la preferencia del cliente;
+  cambiarlo en el perfil cambia toda la app al instante.
+- Montos (`$1.250,50` / `$1,250.50`), fechas, textos para lectores de
+  pantalla y la notificación local siguen el idioma activo.
+- Los errores del backend se traducen por su `code`; nunca se muestra su
+  `detail`, que llega en español.
+- La app envía `Accept-Language` en cada petición.
+- **Textos de la interfaz, siempre de la app.** Del backend solo se muestran
+  los **nombres** (del cliente, de sus cuentas y metas) y los datos
+  sensibles (enmascarados):
+  - **Saludo:** la app lo arma con la hora local ("Buenas tardes" / "Good
+    afternoon") y el nombre del perfil; ignora el texto del backend.
+  - **Cuentas:** sin alias se muestra el tipo traducido. Los alias genéricos
+    del banco ("Ahorros", "Corriente", "Cuenta de ahorros", "Inversiones"…)
+    se traducen, validando que coincidan con el tipo de cuenta ("Ahorros"
+    solo en una de ahorros). Un alias propio del cliente ("Meta: viaje") se
+    respeta.
+  - **Home SDUI:** títulos de secciones, accesos rápidos (por `id`), el
+    encabezado "Meta de ahorro" (de la meta solo se toma su nombre) y las
+    promociones conocidas (por su destino) tienen texto de la app. Una
+    campaña nueva que la app no conoce muestra el texto del backend, que
+    puede venir por idioma: `"title": {"es": "...", "en": "..."}`.
+
+Para agregar un texto: añadirlo en ambos `.arb` y usar `context.l10n.clave`.
 
 ## Seguridad
 

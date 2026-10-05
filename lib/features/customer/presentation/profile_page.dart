@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../app/app_lock_cubit.dart';
 import '../../../app/session_cubit.dart';
 import '../../../design_system/design_system.dart';
+import '../../../l10n/domain_l10n.dart';
+import '../../../l10n/l10n.dart';
 import '../domain/customer_profile.dart';
 import 'profile_bloc.dart';
 
@@ -12,25 +14,26 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return BlocListener<ProfileBloc, ProfileState>(
       listenWhen: (prev, curr) =>
           curr.saveFailure != null && prev.saveFailure != curr.saveFailure,
       listener: (context, state) => ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'No pudimos guardar el cambio. ${state.saveFailure!.message}',
+            context.l10n.saveFailed(state.saveFailure!.localized(context.l10n)),
           ),
         ),
       ),
       child: Scaffold(
-        appBar: AppBar(title: const Text('Mi perfil')),
+        appBar: AppBar(title: Text(l10n.profileTitle)),
         body: BlocBuilder<ProfileBloc, ProfileState>(
           builder: (context, state) => switch (state.status) {
-            ProfileStatus.loading => const Center(
-              child: CircularProgressIndicator(semanticsLabel: 'Cargando'),
+            ProfileStatus.loading => Center(
+              child: CircularProgressIndicator(semanticsLabel: l10n.loading),
             ),
             ProfileStatus.failure => ErrorView(
-              message: state.failure!.message,
+              message: state.failure!.localized(l10n),
               correlationId: state.failure!.correlationId,
               onRetry: () =>
                   context.read<ProfileBloc>().add(const ProfileRequested()),
@@ -51,6 +54,7 @@ class _ProfileContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final prefs = profile.preferences;
     void edit(Preferences next) =>
         context.read<ProfileBloc>().add(PreferencesEdited(next));
@@ -76,7 +80,9 @@ class _ProfileContent extends StatelessWidget {
         Center(
           child: Padding(
             padding: const EdgeInsets.only(top: Spacing.xs),
-            child: Chip(label: Text('Cliente ${profile.segmentLabel}')),
+            child: Chip(
+              label: Text(l10n.customerSegment(profile.segment.label(l10n))),
+            ),
           ),
         ),
         const SizedBox(height: Spacing.md),
@@ -86,17 +92,17 @@ class _ProfileContent extends StatelessWidget {
             children: [
               ListTile(
                 leading: const Icon(Icons.badge_outlined),
-                title: const Text('Cédula'),
+                title: Text(l10n.idNumberLabel),
                 subtitle: Text(profile.maskedIdNumber),
               ),
               ListTile(
                 leading: const Icon(Icons.email_outlined),
-                title: const Text('Correo'),
+                title: Text(l10n.emailTitle),
                 subtitle: Text(profile.email),
               ),
               ListTile(
                 leading: const Icon(Icons.phone_outlined),
-                title: const Text('Celular'),
+                title: Text(l10n.phoneTitle),
                 subtitle: Text(profile.maskedPhone),
               ),
             ],
@@ -105,7 +111,7 @@ class _ProfileContent extends StatelessWidget {
         const SizedBox(height: Spacing.lg),
         Semantics(
           header: true,
-          child: Text('Preferencias', style: theme.textTheme.titleMedium),
+          child: Text(l10n.preferences, style: theme.textTheme.titleMedium),
         ),
         const SizedBox(height: Spacing.sm),
         Card(
@@ -117,7 +123,7 @@ class _ProfileContent extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Tema'),
+                    Text(l10n.theme),
                     const SizedBox(height: Spacing.sm),
                     SizedBox(
                       width: double.infinity,
@@ -126,18 +132,18 @@ class _ProfileContent extends StatelessWidget {
                         // Sin íconos: con 3 opciones el texto no cabe en
                         // pantallas angostas (360 dp).
                         showSelectedIcon: false,
-                        segments: const [
+                        segments: [
                           ButtonSegment(
                             value: ThemePreference.light,
-                            label: Text('Claro'),
+                            label: Text(l10n.themeLight),
                           ),
                           ButtonSegment(
                             value: ThemePreference.dark,
-                            label: Text('Oscuro'),
+                            label: Text(l10n.themeDark),
                           ),
                           ButtonSegment(
                             value: ThemePreference.system,
-                            label: Text('Sistema'),
+                            label: Text(l10n.themeSystem),
                           ),
                         ],
                         selected: {prefs.theme},
@@ -150,16 +156,20 @@ class _ProfileContent extends StatelessWidget {
               ),
               ListTile(
                 leading: const Icon(Icons.language),
-                title: const Text('Idioma'),
-                subtitle: const Text(
-                  'Por ahora la app está disponible solo en español',
-                ),
+                title: Text(l10n.language),
                 trailing: DropdownButton<String>(
+                  key: const Key('profile_language'),
                   value: prefs.language,
                   underline: const SizedBox.shrink(),
-                  items: const [
-                    DropdownMenuItem(value: 'es', child: Text('Español')),
-                    DropdownMenuItem(value: 'en', child: Text('English')),
+                  items: [
+                    DropdownMenuItem(
+                      value: 'es',
+                      child: Text(l10n.languageSpanish),
+                    ),
+                    DropdownMenuItem(
+                      value: 'en',
+                      child: Text(l10n.languageEnglish),
+                    ),
                   ],
                   onChanged: (v) {
                     if (v != null) edit(prefs.copyWith(language: v));
@@ -169,16 +179,16 @@ class _ProfileContent extends StatelessWidget {
               SwitchListTile(
                 key: const Key('profile_notifications'),
                 secondary: const Icon(Icons.notifications_outlined),
-                title: const Text('Notificaciones'),
-                subtitle: const Text('Avisos de tus transferencias'),
+                title: Text(l10n.notifications),
+                subtitle: Text(l10n.notificationsSubtitle),
                 value: prefs.notificationsEnabled,
                 onChanged: (v) => edit(prefs.copyWith(notificationsEnabled: v)),
               ),
               SwitchListTile(
                 key: const Key('profile_promotions'),
                 secondary: const Icon(Icons.local_offer_outlined),
-                title: const Text('Promociones'),
-                subtitle: const Text('Ver ofertas en tu inicio'),
+                title: Text(l10n.promotions),
+                subtitle: Text(l10n.promotionsSubtitle),
                 value: prefs.showPromotions,
                 onChanged: (v) => edit(prefs.copyWith(showPromotions: v)),
               ),
@@ -191,7 +201,7 @@ class _ProfileContent extends StatelessWidget {
           key: const Key('profile_logout'),
           onPressed: () => context.read<SessionCubit>().logout(),
           icon: const Icon(Icons.logout),
-          label: const Text('Cerrar sesión'),
+          label: Text(l10n.logout),
         ),
       ],
     );
@@ -205,6 +215,7 @@ class _BiometricSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lock = context.watch<AppLockCubit>().state;
+    final l10n = context.l10n;
     if (!lock.available) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(top: Spacing.lg),
@@ -213,10 +224,13 @@ class _BiometricSection extends StatelessWidget {
         child: SwitchListTile(
           key: const Key('profile_biometrics'),
           secondary: const Icon(Icons.fingerprint),
-          title: const Text('Ingresar con huella o rostro'),
-          subtitle: const Text('Solo en este dispositivo'),
+          title: Text(l10n.biometricToggle),
+          subtitle: Text(l10n.biometricToggleSubtitle),
           value: lock.enabled,
-          onChanged: (v) => context.read<AppLockCubit>().setEnabled(enabled: v),
+          onChanged: (v) => context.read<AppLockCubit>().setEnabled(
+            enabled: v,
+            reason: l10n.biometricEnableReason,
+          ),
         ),
       ),
     );

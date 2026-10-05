@@ -20,9 +20,7 @@ abstract final class ErrorMapper {
       return ServerFailure(
         code: circuitOpenCode,
         statusCode: 503,
-        message:
-            'El servicio no está disponible en este momento. '
-            'Lo intentaremos de nuevo en unos segundos.',
+        message: 'Circuit open: request not sent',
         correlationId: correlationId,
       );
     }
@@ -63,7 +61,7 @@ abstract final class ErrorMapper {
         correlationId: correlationId,
       );
     }
-    final message = detail ?? 'No pudimos completar la operación.';
+    final message = detail ?? 'Request failed with status $status';
     return switch (status) {
       401 => UnauthorizedFailure(
         message: message,

@@ -1,0 +1,18 @@
+{
+  "screen": "home",
+  "segment": "STANDARD",
+  "components": [
+    { "id": "fallback-greeting", "type": "greeting", "props": { "title": "Hello" } },
+    { "id": "fallback-accounts", "type": "accounts_summary", "props": { "title": "Your accounts", "showTotal": true } },
+    {
+      "id": "fallback-actions",
+      "type": "quick_actions",
+      "props": {
+        "actions": [
+          { "id": "transfer", "icon": "swap", "label": "Transfer", "deeplink": "app://transfers" },
+          { "id": "profile", "icon": "person", "label": "My profile", "deeplink": "app://profile" }
+        ]
+      }
+    }
+  ]
+}

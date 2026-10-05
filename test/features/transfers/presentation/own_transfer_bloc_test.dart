@@ -9,6 +9,7 @@ import 'package:nexo_bank/features/accounts/domain/account.dart';
 import 'package:nexo_bank/features/transfers/application/get_own_accounts.dart';
 import 'package:nexo_bank/features/transfers/application/transfer_between_own_accounts.dart';
 import 'package:nexo_bank/features/transfers/domain/transfer.dart';
+import 'package:nexo_bank/features/transfers/domain/transfer_rules.dart';
 import 'package:nexo_bank/features/transfers/presentation/bloc/own_transfer_bloc.dart';
 
 import '../../../helpers/accounts_fixtures.dart';
@@ -110,7 +111,7 @@ void main() {
             .having(
               (s) => s.amountError,
               'error',
-              contains('Saldo insuficiente'),
+              TransferError.insufficientBalance,
             ),
       ],
     );
@@ -122,7 +123,7 @@ void main() {
       act: (b) => b.add(const TransferReviewRequested()),
       verify: (b) {
         expect(b.state.step, TransferStep.editing);
-        expect(b.state.amountError, contains('mayor a cero'));
+        expect(b.state.amountError, TransferError.amountNotPositive);
       },
     );
   });
@@ -180,11 +181,7 @@ void main() {
       expect: () => [
         isA<OwnTransferState>()
             .having((s) => s.step, 'step', TransferStep.rejected)
-            .having(
-              (s) => s.failureMessage,
-              'msg',
-              contains('Saldo insuficiente'),
-            ),
+            .having((s) => s.failure?.code, 'code', 'insufficient-funds'),
       ],
     );
 

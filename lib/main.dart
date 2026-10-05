@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive_ce_flutter/hive_ce_flutter.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'app/app.dart';
 import 'app/app_lock_cubit.dart';
@@ -15,6 +16,8 @@ import 'features/notifications/infrastructure/local_notifications_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Nombres de meses y días para las fechas en español e inglés.
+  await initializeDateFormatting();
 
   const storage = FlutterSecureStorage(
     iOptions: IOSOptions(

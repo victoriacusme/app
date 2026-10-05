@@ -29,6 +29,10 @@ class TransferRemoteDataSource {
     return transferFromJson(response.data!);
   }
 
+  Future<Transfer> getTransfer(String id) async => transferFromJson(
+    (await _dio.get<Map<String, dynamic>>('/transfers/$id')).data!,
+  );
+
   static Transfer transferFromJson(Map<String, dynamic> json) => Transfer(
     id: json['id'] as String,
     status: json['status'] == 'COMPLETED'

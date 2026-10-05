@@ -6,6 +6,7 @@ import 'certificate_pinning.dart';
 import 'interceptors/auth_interceptor.dart';
 import 'interceptors/circuit_breaker_interceptor.dart';
 import 'interceptors/correlation_id_interceptor.dart';
+import 'interceptors/language_interceptor.dart';
 import 'interceptors/refresh_token_interceptor.dart';
 import 'interceptors/retry_interceptor.dart';
 
@@ -25,6 +26,7 @@ Dio createDioClient({
   CircuitBreakerInterceptor? circuitBreaker,
   Delay? retryDelay,
   CertificatePinning? pinning,
+  String Function()? language,
 }) {
   final dio = Dio(
     BaseOptions(
@@ -39,6 +41,7 @@ Dio createDioClient({
   (pinning ?? CertificatePinning.fromEnvironment())?.applyTo(dio);
   dio.interceptors.addAll([
     CorrelationIdInterceptor(),
+    if (language != null) LanguageInterceptor(language),
     circuitBreaker ?? CircuitBreakerInterceptor(),
     AuthInterceptor(tokenStore),
     RetryInterceptor(dio: dio, delay: retryDelay),

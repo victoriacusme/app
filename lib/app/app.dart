@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/connectivity/connectivity_cubit.dart';
 import '../core/navigation/deep_links.dart';
 import '../design_system/design_system.dart';
+import '../l10n/l10n.dart';
 import 'app_lock_cubit.dart';
 import 'app_settings_cubit.dart';
 import 'router.dart';
@@ -98,16 +98,20 @@ class _NexoAppState extends State<NexoApp> {
         BlocProvider.value(value: widget.lockCubit),
       ],
       child: BlocBuilder<AppSettingsCubit, AppSettings>(
-        buildWhen: (a, b) => a.themeMode != b.themeMode,
+        buildWhen: (a, b) => a.themeMode != b.themeMode || a.locale != b.locale,
         builder: (context, settings) => MaterialApp.router(
-          title: 'Nexo Bank',
+          onGenerateTitle: (context) => context.l10n.appTitle,
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
           themeMode: settings.themeMode,
-          locale: const Locale('es'),
-          supportedLocales: const [Locale('es')],
-          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          // Idioma del cliente o, antes del login, el del dispositivo; si el
+          // dispositivo está en otro idioma, español.
+          locale: settings.locale,
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localeResolutionCallback: (device, supported) =>
+              Locale(AppLanguages.resolve(device?.languageCode)),
           routerConfig: _router,
           builder: (context, child) => PrivacyCover(
             onBackgrounded: widget.lockCubit.onBackgrounded,

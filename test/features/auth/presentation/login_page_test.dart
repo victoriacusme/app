@@ -4,10 +4,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:nexo_bank/app/session_cubit.dart';
-import 'package:nexo_bank/design_system/design_system.dart';
 import 'package:nexo_bank/features/auth/domain/session.dart';
 import 'package:nexo_bank/features/auth/presentation/bloc/login_bloc.dart';
 import 'package:nexo_bank/features/auth/presentation/pages/login_page.dart';
+
+import '../../../helpers/pump_app.dart';
 
 class _MockLoginBloc extends MockBloc<LoginEvent, LoginState>
     implements LoginBloc {}
@@ -31,9 +32,12 @@ void main() {
     when(() => sessionCubit.state).thenReturn(const SessionUnauthenticated());
   });
 
-  Future<void> pump(WidgetTester tester) => tester.pumpWidget(
-    MaterialApp(
-      theme: AppTheme.light(),
+  Future<void> pump(
+    WidgetTester tester, {
+    Locale locale = const Locale('es'),
+  }) => tester.pumpWidget(
+    localizedApp(
+      locale: locale,
       home: MultiBlocProvider(
         providers: [
           BlocProvider<LoginBloc>.value(value: loginBloc),
@@ -106,7 +110,6 @@ void main() {
       const LoginState(
         status: LoginStatus.failure,
         error: LoginError.invalidCredentials,
-        message: 'Usuario o contraseña incorrectos.',
       ),
     );
     await pump(tester);
@@ -142,5 +145,21 @@ void main() {
     await pump(tester);
 
     expect(find.textContaining('sesión expiró'), findsOneWidget);
+  });
+
+  testWidgets('con el idioma en inglés toda la pantalla está en inglés', (
+    tester,
+  ) async {
+    when(() => loginBloc.state).thenReturn(
+      const LoginState(status: LoginStatus.failure, error: LoginError.locked),
+    );
+    await pump(tester, locale: const Locale('en'));
+
+    expect(find.text('Welcome to Nexo'), findsOneWidget);
+    expect(find.text('Username'), findsOneWidget);
+    expect(find.text('Sign in'), findsOneWidget);
+    expect(find.textContaining('Your user is locked'), findsOneWidget);
+    expect(find.text("Don't have an account? Create one"), findsOneWidget);
+    expect(find.textContaining('Bienvenido'), findsNothing);
   });
 }

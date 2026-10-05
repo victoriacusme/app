@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../design_system/design_system.dart';
+import '../../l10n/l10n.dart';
 import '../app_lock_cubit.dart';
 import '../session_cubit.dart';
 
@@ -25,13 +26,16 @@ class _LockedPageState extends State<LockedPage> {
   }
 
   Future<void> _unlock() async {
-    final ok = await context.read<AppLockCubit>().unlock();
+    final ok = await context.read<AppLockCubit>().unlock(
+      reason: context.l10n.biometricUnlockReason,
+    );
     if (mounted && !ok) setState(() => _failed = true);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -47,27 +51,25 @@ class _LockedPageState extends State<LockedPage> {
                 ),
                 const SizedBox(height: Spacing.md),
                 Text(
-                  'Nexo Bank está bloqueado',
+                  l10n.lockedTitle,
                   style: theme.textTheme.headlineSmall,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: Spacing.sm),
                 Text(
-                  _failed
-                      ? 'No pudimos verificar tu identidad.'
-                      : 'Usa tu huella o rostro para continuar.',
+                  _failed ? l10n.lockedFailed : l10n.lockedHint,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: Spacing.lg),
                 PrimaryButton(
                   key: const Key('unlock_button'),
-                  label: 'Desbloquear',
+                  label: l10n.unlock,
                   onPressed: _unlock,
                 ),
                 const SizedBox(height: Spacing.sm),
                 TextButton(
                   onPressed: () => context.read<SessionCubit>().logout(),
-                  child: const Text('Ingresar con mi contraseña'),
+                  child: Text(l10n.lockedUsePassword),
                 ),
               ],
             ),

@@ -64,7 +64,7 @@ void main() {
     expect: () => [
       isA<LoginState>()
           .having((s) => s.error, 'error', LoginError.locked)
-          .having((s) => s.message, 'message', contains('bloqueado')),
+          .having((s) => s.failure?.code, 'code', 'user-locked'),
     ],
   );
 

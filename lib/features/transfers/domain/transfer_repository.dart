@@ -8,4 +8,7 @@ abstract interface class TransferRepository {
     TransferDraft draft, {
     required String idempotencyKey,
   });
+
+  /// Detalle de una transferencia propia (p. ej. al abrir un push).
+  Future<Result<Transfer>> getTransfer(String id);
 }

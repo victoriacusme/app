@@ -1,5 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nexo_bank/features/auth/domain/registration_rules.dart';
+import 'package:nexo_bank/l10n/domain_l10n.dart';
+
+import '../../../helpers/l10n.dart';
 
 void main() {
   final today = DateTime(2026, 10, 4);
@@ -11,15 +14,27 @@ void main() {
     );
     expect(
       RegistrationRules.birthDate(DateTime(2008, 10, 5), today: today),
-      'Debes ser mayor de edad',
+      RegistrationError.underage,
     );
-    expect(RegistrationRules.birthDate(null, today: today), isNotNull);
+    expect(
+      RegistrationRules.birthDate(null, today: today),
+      RegistrationError.birthDateRequired,
+    );
   });
 
   test('contraseña con las reglas de ms-auth', () {
-    expect(RegistrationRules.password('corta1'), 'Mínimo 8 caracteres');
-    expect(RegistrationRules.password('solotexto'), contains('número'));
-    expect(RegistrationRules.password('12345678'), contains('letra'));
+    expect(
+      RegistrationRules.password('corta1'),
+      RegistrationError.passwordTooShort,
+    );
+    expect(
+      RegistrationRules.password('solotexto'),
+      RegistrationError.passwordWeak,
+    );
+    expect(
+      RegistrationRules.password('12345678'),
+      RegistrationError.passwordWeak,
+    );
     expect(RegistrationRules.password('Clave2026x'), isNull);
   });
 
@@ -33,6 +48,22 @@ void main() {
     expect(RegistrationRules.email('ana@nexo'), isNotNull);
     expect(RegistrationRules.phone('+593 99 123 4567'), isNull);
     expect(RegistrationRules.phone('12345'), isNotNull);
-    expect(RegistrationRules.fullName('Ana'), 'Ingresa nombre y apellido');
+    expect(
+      RegistrationRules.fullName('Ana'),
+      RegistrationError.fullNameSurname,
+    );
+  });
+
+  test('cada error tiene su mensaje en español e inglés', () {
+    for (final error in RegistrationError.values) {
+      expect(error.message(es), isNotEmpty, reason: '$error es');
+      expect(error.message(en), isNotEmpty, reason: '$error en');
+    }
+    expect(RegistrationError.underage.message(es), 'Debes ser mayor de edad');
+    expect(RegistrationError.underage.message(en), 'You must be of legal age');
+    expect(
+      RegistrationError.passwordTooShort.message(en),
+      'At least 8 characters',
+    );
   });
 }

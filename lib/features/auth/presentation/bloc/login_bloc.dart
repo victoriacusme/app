@@ -37,25 +37,14 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     }
   }
 
-  static LoginState _failureState(Failure failure) {
-    final (error, message) = switch (failure) {
-      Failure(code: AuthErrorCodes.userLocked) => (
-        LoginError.locked,
-        'Tu usuario está bloqueado por varios intentos fallidos. '
-            'Comunícate con soporte para desbloquearlo.',
-      ),
-      UnauthorizedFailure() => (
-        LoginError.invalidCredentials,
-        'Usuario o contraseña incorrectos.',
-      ),
-      NetworkFailure() ||
-      TimeoutFailure() => (LoginError.network, failure.message),
-      _ => (LoginError.unknown, failure.message),
-    };
-    return LoginState(
-      status: LoginStatus.failure,
-      error: error,
-      message: message,
-    );
-  }
+  static LoginState _failureState(Failure failure) => LoginState(
+    status: LoginStatus.failure,
+    failure: failure,
+    error: switch (failure) {
+      Failure(code: AuthErrorCodes.userLocked) => LoginError.locked,
+      UnauthorizedFailure() => LoginError.invalidCredentials,
+      NetworkFailure() || TimeoutFailure() => LoginError.network,
+      _ => LoginError.unknown,
+    },
+  );
 }

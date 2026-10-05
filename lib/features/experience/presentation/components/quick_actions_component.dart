@@ -2,18 +2,39 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/navigation/deep_links.dart';
 import '../../../../design_system/design_system.dart';
+import '../../../../l10n/l10n.dart';
 import '../../domain/experience_layout.dart';
+import '../localized_text.dart';
 
 class QuickAction {
   const QuickAction({
+    required this.id,
     required this.label,
     required this.icon,
     required this.deeplink,
   });
 
-  final String label;
+  final String? id;
+  final LocalizedText label;
   final String icon;
   final String deeplink;
+
+  /// Las acciones conocidas por `id` usan el texto traducido de la app; las
+  /// nuevas usan el texto del backend.
+  String text(AppLocalizations l10n) {
+    if (label.isLocalized) return label.resolve(l10n.localeName);
+    return switch (id) {
+      'transfer' => l10n.quickActionTransfer,
+      'topup' => l10n.quickActionTopup,
+      'goals' => l10n.quickActionGoals,
+      'invest' => l10n.quickActionInvest,
+      'advisor' => l10n.quickActionAdvisor,
+      'collect' => l10n.quickActionCollect,
+      'suppliers' => l10n.quickActionSuppliers,
+      'profile' => l10n.quickActionProfile,
+      _ => label.resolve(l10n.localeName),
+    };
+  }
 }
 
 class QuickActionsComponent extends StatelessWidget {
@@ -24,7 +45,8 @@ class QuickActionsComponent extends StatelessWidget {
         actions: [
           for (final a in spec.properties['actions'] as List<dynamic>)
             QuickAction(
-              label: (a as Map)['label'] as String,
+              id: (a as Map)['id'] as String?,
+              label: LocalizedText.parse(a['label']),
               icon: a['icon'] as String? ?? '',
               deeplink: a['deeplink'] as String,
             ),
@@ -47,6 +69,7 @@ class QuickActionsComponent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final l10n = context.l10n;
     return Padding(
       padding: const EdgeInsets.only(bottom: Spacing.lg),
       child: Row(
@@ -56,7 +79,7 @@ class QuickActionsComponent extends StatelessWidget {
             Expanded(
               child: Semantics(
                 button: true,
-                label: action.label,
+                label: action.text(l10n),
                 excludeSemantics: true,
                 child: InkWell(
                   key: Key('quick_action_${action.deeplink}'),
@@ -76,7 +99,7 @@ class QuickActionsComponent extends StatelessWidget {
                         ),
                         const SizedBox(height: Spacing.xs),
                         Text(
-                          action.label,
+                          action.text(l10n),
                           textAlign: TextAlign.center,
                           maxLines: 2,
                           style: Theme.of(context).textTheme.labelMedium,

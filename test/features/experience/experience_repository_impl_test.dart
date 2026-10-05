@@ -98,18 +98,20 @@ void main() {
     expect(layouts.single.components.single.type, 'savings_goal');
   });
 
-  test('el JSON de respaldo incluido en la app es válido', () async {
-    final json = jsonDecode(
-      await File('assets/experience/home_fallback.json').readAsString(),
-    ) as Map<String, dynamic>;
+  for (final lang in ['es', 'en']) {
+    test('el JSON de respaldo ($lang) incluido en la app es válido', () async {
+      final json = jsonDecode(
+        await File('assets/experience/home_fallback_$lang.json').readAsString(),
+      ) as Map<String, dynamic>;
 
-    final layout = ExperienceRepositoryImpl.fromJson(json);
+      final layout = ExperienceRepositoryImpl.fromJson(json);
 
-    expect(
-      layout.components.map((c) => c.type),
-      containsAll(['greeting', 'accounts_summary', 'quick_actions']),
-    );
-  });
+      expect(
+        layout.components.map((c) => c.type),
+        containsAll(['greeting', 'accounts_summary', 'quick_actions']),
+      );
+    });
+  }
 
   test('componentes sin type se descartan al leer', () {
     final layout = ExperienceRepositoryImpl.fromJson({

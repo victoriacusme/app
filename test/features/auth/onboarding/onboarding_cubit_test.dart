@@ -5,6 +5,7 @@ import 'package:nexo_bank/core/result/failure.dart';
 import 'package:nexo_bank/core/result/result.dart';
 import 'package:nexo_bank/features/auth/application/register.dart';
 import 'package:nexo_bank/features/auth/domain/registration.dart';
+import 'package:nexo_bank/features/auth/domain/registration_rules.dart';
 import 'package:nexo_bank/features/auth/domain/session.dart';
 import 'package:nexo_bank/features/auth/presentation/onboarding/onboarding_cubit.dart';
 
@@ -94,7 +95,7 @@ void main() {
       expect(c.state.step, OnboardingStep.credentials);
       expect(
         c.state.visibleError(OnboardingField.confirmation),
-        'Las contraseñas no coinciden',
+        RegistrationError.passwordMismatch,
       );
     },
   );
@@ -129,7 +130,7 @@ void main() {
       expect(c.state.step, OnboardingStep.credentials);
       expect(
         c.state.visibleError(OnboardingField.username),
-        contains('ya existe'),
+        RegistrationError.usernameTaken,
       );
     },
   );
@@ -153,7 +154,7 @@ void main() {
       expect(c.state.step, OnboardingStep.personal);
       expect(
         c.state.visibleError(OnboardingField.phone),
-        'no es un teléfono válido',
+        RegistrationError.serverInvalid,
       );
     },
   );
@@ -170,7 +171,7 @@ void main() {
     act: (c) => c.next(),
     verify: (c) {
       expect(c.state.step, OnboardingStep.terms);
-      expect(c.state.failureMessage, contains('No pudimos completar'));
+      expect(c.state.failure?.code, 'onboarding-unavailable');
       expect(c.state.submitting, isFalse);
     },
   );
