@@ -79,9 +79,6 @@ opcional:
   peticiones del gateway. Al revisar los logs del backend vi que no había
   ningún 429; el problema real era una recarga del home sin sesión
   después de cerrar sesión.
-- **Rama equivocada:** en una ocasión creó una rama nueva en lugar de
-  seguir en la que estaba trabajando, y tuve que pedirle que moviera los
-  cambios.
 
 ## Datos y seguridad
 
@@ -93,5 +90,17 @@ opcional:
 
 ## Mi revisión
 
-_(Pendiente de completar: qué partes revisé línea por línea, qué cambié a
-mano y qué aprendí.)_
+Lo que cambié a mano fue sobre todo el **diseño**: ajusté la posición de
+los componentes en las pantallas (alineaciones, espacios y el orden en que
+aparecen), revisándolos en el emulador y en un teléfono físico hasta que
+quedaron como quería.
+
+## Qué aprendí: pruebas E2E en una app móvil
+
+En proyectos web había automatizado pruebas de punta a punta con
+**Selenium**, y pensé que en la app sería parecido. No lo es: con Flutter,
+la prueba no maneja la app desde afuera, sino que corre **dentro** de ella.
+Estas son las diferencias que tuve que entender para integrar los E2E
+(`integration_test/`).
+
+#
