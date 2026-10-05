@@ -17,6 +17,20 @@ abstract final class AppLanguages {
     final lang = code?.split(RegExp('[-_]')).first.toLowerCase();
     return supported.contains(lang) ? lang! : fallback;
   }
+
+  /// Primer idioma soportado de la lista de preferencias del teléfono
+  /// (p. ej. [fr, en] → en); si ninguno lo es, el de respaldo.
+  static String resolveList(List<Locale>? locales) {
+    for (final locale in locales ?? const <Locale>[]) {
+      final lang = locale.languageCode.toLowerCase();
+      if (supported.contains(lang)) return lang;
+    }
+    return fallback;
+  }
+
+  /// Idioma de la app: el del teléfono.
+  static String device() =>
+      resolveList(WidgetsBinding.instance.platformDispatcher.locales);
 }
 
 extension L10nContext on BuildContext {

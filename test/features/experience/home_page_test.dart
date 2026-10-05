@@ -309,19 +309,20 @@ void main() {
       await tester.pump();
     }
 
-    const es = AppSettings(locale: Locale('es'), customerLoaded: true);
+    const es = AppSettings(language: 'es', customerLoaded: true);
 
-    testWidgets('al cambiar de idioma se vuelve a pedir el layout', (
-      tester,
-    ) async {
-      await pumpWith(
-        tester,
-        es,
-        const AppSettings(locale: Locale('en'), customerLoaded: true),
-      );
+    testWidgets(
+      'al cambiar el idioma del teléfono se vuelve a pedir el layout',
+      (tester) async {
+        await pumpWith(
+          tester,
+          es,
+          const AppSettings(language: 'en', customerLoaded: true),
+        );
 
-      verify(() => experience.load()).called(1);
-    });
+        verify(() => experience.load()).called(1);
+      },
+    );
 
     testWidgets(
       'al desactivar promociones se ocultan al instante y se pide el layout',
@@ -341,7 +342,7 @@ void main() {
           tester,
           es,
           const AppSettings(
-            locale: Locale('es'),
+            language: 'es',
             customerLoaded: true,
             showPromotions: false,
           ),
@@ -385,7 +386,7 @@ void main() {
       await pumpWith(
         tester,
         const AppSettings(
-          locale: Locale('en'),
+          language: 'en',
           customerLoaded: true,
           showPromotions: false,
         ),

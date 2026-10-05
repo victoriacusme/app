@@ -88,7 +88,7 @@ void configureDependencies({
             (await getIt<AuthRemoteDataSource>().refresh(refreshToken))
                 .toTokens(),
         onSessionExpired: () => getIt<SessionCubit>().sessionExpired(),
-        language: () => getIt<AppSettingsCubit>().state.languageCode,
+        language: () => AppLanguages.device(),
       ),
     );
 
@@ -157,9 +157,7 @@ void configureDependencies({
         service: getIt(),
         isEnabled: () => getIt<AppSettingsCubit>().state.notificationsEnabled,
         // El aviso se arma en el idioma activo de la app.
-        l10n: () => lookupAppLocalizations(
-          Locale(getIt<AppSettingsCubit>().state.languageCode),
-        ),
+        l10n: () => lookupAppLocalizations(Locale(AppLanguages.device())),
       ),
     )
     ..registerLazySingleton(
@@ -192,7 +190,7 @@ void configureDependencies({
         // Layout de respaldo en el idioma activo.
         loadFallback: () => rootBundle.loadString(
           'assets/experience/home_fallback_'
-          '${getIt<AppSettingsCubit>().state.languageCode}.json',
+          '${AppLanguages.device()}.json',
         ),
       ),
     )

@@ -1,3 +1,5 @@
+import '../../../l10n/l10n.dart';
+
 /// Texto de una prop del SDUI. Acepta un texto simple (`"Hola"`) o uno por
 /// idioma (`{"es": "Hola", "en": "Hi"}`). Con un texto simple se muestra tal
 /// cual: la traducción es responsabilidad del backend.
@@ -26,6 +28,6 @@ class LocalizedText {
   String resolve(String language) =>
       _text ??
       _byLanguage![language] ??
-      _byLanguage!['es'] ??
+      _byLanguage![AppLanguages.fallback] ??
       _byLanguage!.values.first;
 }

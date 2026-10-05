@@ -21,7 +21,7 @@ void main() {
 
     Future<void> setPromotions(bool on) async {
       await tester.tap(find.byKey(const Key('home_profile')));
-      await pumpUntil(tester, find.byKey(const Key('profile_language')));
+      await pumpUntil(tester, find.byKey(const Key('profile_theme')));
       await tester.scrollUntilVisible(find.byKey(toggle), 200);
       final current = tester.widget<SwitchListTile>(find.byKey(toggle)).value;
       if (current != on) await tapVisible(tester, find.byKey(toggle));

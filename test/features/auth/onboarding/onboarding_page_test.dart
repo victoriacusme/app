@@ -110,4 +110,35 @@ void main() {
 
     verify(() => session.authenticated(newSession)).called(1);
   });
+
+  testWidgets('al salir de un campo avisa al cubit para validarlo', (
+    tester,
+  ) async {
+    await pump(tester, const OnboardingState());
+
+    await tester.tap(find.byKey(const Key('onboarding_idNumber')));
+    await tester.pump();
+    // Pasar al siguiente campo quita el foco de la cédula.
+    await tester.tap(find.byKey(const Key('onboarding_email')));
+    await tester.pump();
+
+    verify(() => cubit.fieldLeft(OnboardingField.idNumber)).called(1);
+    verifyNever(() => cubit.fieldLeft(OnboardingField.email));
+  });
+
+  testWidgets('un campo visitado muestra su error antes de Continuar', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      const OnboardingState(
+        values: {OnboardingField.idNumber: '0102'},
+        touched: {OnboardingField.idNumber},
+      ),
+    );
+
+    expect(find.text('La cédula debe tener 10 dígitos'), findsOneWidget);
+    // Los que no ha tocado todavía no muestran error.
+    expect(find.text('Elige tu fecha de nacimiento'), findsNothing);
+  });
 }

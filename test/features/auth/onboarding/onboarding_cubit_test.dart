@@ -184,4 +184,37 @@ void main() {
     expect(cubit.state.step, OnboardingStep.personal);
     expect(cubit.back(), isFalse);
   });
+
+  group('validación al salir del campo', () {
+    test('el error aparece al salir del campo, sin tocar Continuar', () {
+      final cubit = OnboardingCubit(register)
+        ..changed(OnboardingField.idNumber, '0102');
+
+      // Mientras escribe por primera vez no se le muestra el error.
+      expect(cubit.state.visibleError(OnboardingField.idNumber), isNull);
+
+      cubit.fieldLeft(OnboardingField.idNumber);
+
+      expect(cubit.state.visibleError(OnboardingField.idNumber), isNotNull);
+      // Los campos que aún no visitó siguen sin error.
+      expect(cubit.state.visibleError(OnboardingField.email), isNull);
+    });
+
+    test('ya visitado, el error se actualiza en vivo al corregirlo', () {
+      final cubit = OnboardingCubit(register)
+        ..changed(OnboardingField.idNumber, '0102')
+        ..fieldLeft(OnboardingField.idNumber)
+        ..changed(OnboardingField.idNumber, '0102030405');
+
+      expect(cubit.state.visibleError(OnboardingField.idNumber), isNull);
+    });
+
+    test('salir de un campo válido no muestra error', () {
+      final cubit = OnboardingCubit(register)
+        ..changed(OnboardingField.email, 'ana@nexo.ec')
+        ..fieldLeft(OnboardingField.email);
+
+      expect(cubit.state.visibleError(OnboardingField.email), isNull);
+    });
+  });
 }

@@ -822,24 +822,6 @@ abstract class AppLocalizations {
   /// **'Sistema'**
   String get themeSystem;
 
-  /// No description provided for @language.
-  ///
-  /// In es, this message translates to:
-  /// **'Idioma'**
-  String get language;
-
-  /// No description provided for @languageSpanish.
-  ///
-  /// In es, this message translates to:
-  /// **'Español'**
-  String get languageSpanish;
-
-  /// No description provided for @languageEnglish.
-  ///
-  /// In es, this message translates to:
-  /// **'English'**
-  String get languageEnglish;
-
   /// No description provided for @notifications.
   ///
   /// In es, this message translates to:
@@ -1396,6 +1378,54 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'0% de comisión en todas tus transferencias'**
   String get promoTransfersSubtitle;
+
+  /// No description provided for @loginHello.
+  ///
+  /// In es, this message translates to:
+  /// **'Hola, {name}'**
+  String loginHello(String name);
+
+  /// No description provided for @loginWithPassword.
+  ///
+  /// In es, this message translates to:
+  /// **'Usuario y contraseña'**
+  String get loginWithPassword;
+
+  /// No description provided for @openAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Abrir cuenta'**
+  String get openAccount;
+
+  /// No description provided for @help.
+  ///
+  /// In es, this message translates to:
+  /// **'Ayuda'**
+  String get help;
+
+  /// No description provided for @helpTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Necesitas ayuda?'**
+  String get helpTitle;
+
+  /// No description provided for @helpPhone.
+  ///
+  /// In es, this message translates to:
+  /// **'Línea Nexo'**
+  String get helpPhone;
+
+  /// No description provided for @helpEmail.
+  ///
+  /// In es, this message translates to:
+  /// **'Escríbenos'**
+  String get helpEmail;
+
+  /// No description provided for @helpHours.
+  ///
+  /// In es, this message translates to:
+  /// **'Atención las 24 horas, todos los días.'**
+  String get helpHours;
 }
 
 class _AppLocalizationsDelegate

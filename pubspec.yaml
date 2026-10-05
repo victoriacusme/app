@@ -45,6 +45,7 @@ flutter:
     - assets/experience/
     - assets/branding/splash_logo.png
     - assets/branding/splash_logo_dark.png
+    - assets/branding/logo_white.png
 
 # Splash nativo (lo primero que se ve al abrir la app): logo centrado sobre
 # fondo claro. Regenerar con: dart run flutter_native_splash:create

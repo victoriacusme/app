@@ -434,15 +434,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get themeSystem => 'System';
 
   @override
-  String get language => 'Language';
-
-  @override
-  String get languageSpanish => 'Español';
-
-  @override
-  String get languageEnglish => 'English';
-
-  @override
   String get notifications => 'Notifications';
 
   @override
@@ -752,4 +743,30 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get promoTransfersSubtitle => '0% fees on all your transfers';
+
+  @override
+  String loginHello(String name) {
+    return 'Hi, $name';
+  }
+
+  @override
+  String get loginWithPassword => 'Username and password';
+
+  @override
+  String get openAccount => 'Open an account';
+
+  @override
+  String get help => 'Help';
+
+  @override
+  String get helpTitle => 'Need help?';
+
+  @override
+  String get helpPhone => 'Nexo phone line';
+
+  @override
+  String get helpEmail => 'Email us';
+
+  @override
+  String get helpHours => 'Available 24 hours a day, every day.';
 }

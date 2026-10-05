@@ -40,7 +40,7 @@ class NexoApp extends StatefulWidget {
   State<NexoApp> createState() => _NexoAppState();
 }
 
-class _NexoAppState extends State<NexoApp> {
+class _NexoAppState extends State<NexoApp> with WidgetsBindingObserver {
   late final GoRouter _router = createRouter(
     widget.sessionCubit,
     widget.lockCubit,
@@ -62,7 +62,14 @@ class _NexoAppState extends State<NexoApp> {
     });
     _session = widget.sessionCubit.stream.listen((_) => _openPending());
     _lock = widget.lockCubit.stream.listen((_) => _openPending());
+    WidgetsBinding.instance.addObserver(this);
   }
+
+  /// El cliente cambió el idioma del teléfono: la app se redibuja sola en
+  /// ese idioma y se le informa al backend (para los push).
+  @override
+  void didChangeLocales(List<Locale>? locales) =>
+      widget.settingsCubit.deviceLanguageChanged();
 
   static String? _routeOf(String? link) =>
       link == null ? null : DeepLinks.routeFor(link);
@@ -81,6 +88,7 @@ class _NexoAppState extends State<NexoApp> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     unawaited(_links.cancel());
     unawaited(_session.cancel());
     unawaited(_lock.cancel());
@@ -100,23 +108,19 @@ class _NexoAppState extends State<NexoApp> {
       child: Builder(
         builder: (context) {
           final settings = context.watch<AppSettingsCubit>().state;
-          // Con la sesión bloqueada se ve el login: va en el idioma del
-          // teléfono, no en el del cliente guardado (puede entrar otra
-          // persona). La preferencia del cliente se aplica una vez adentro.
-          final locked = context.select((AppLockCubit c) => c.state.locked);
           return MaterialApp.router(
             onGenerateTitle: (context) => context.l10n.appTitle,
             debugShowCheckedModeBanner: false,
             theme: AppTheme.light(),
             darkTheme: AppTheme.dark(),
             themeMode: settings.themeMode,
-            // Idioma del cliente o, antes del login, el del dispositivo; si el
-            // dispositivo está en otro idioma, español.
-            locale: locked ? null : settings.locale,
+            // El idioma es siempre el del teléfono: el primero soportado de
+            // su lista de idiomas (si ninguno lo es, español). Si el cliente
+            // cambia el idioma del teléfono, la app cambia en vivo.
             supportedLocales: AppLocalizations.supportedLocales,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
-            localeResolutionCallback: (device, supported) =>
-                Locale(AppLanguages.resolve(device?.languageCode)),
+            localeListResolutionCallback: (locales, supported) =>
+                Locale(AppLanguages.resolveList(locales)),
             routerConfig: _router,
             builder: (context, child) => PrivacyCover(
               onBackgrounded: widget.lockCubit.onBackgrounded,

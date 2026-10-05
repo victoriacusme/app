@@ -37,6 +37,15 @@ class CustomerRepositoryImpl implements CustomerRepository {
       });
 
   @override
+  Future<String?> cachedFirstName() async {
+    try {
+      final entry = await _cache.read(_profileKey);
+      if (entry?.data case {'firstName': final String name}) return name;
+    } catch (_) {}
+    return null;
+  }
+
+  @override
   Future<Result<Preferences>> updatePreferences(
     Preferences current,
     Preferences next,

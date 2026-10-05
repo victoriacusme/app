@@ -52,7 +52,7 @@ void main() {
     await tester.binding.handlePopRoute();
     await pumpUntil(tester, find.byKey(const Key('home_profile')));
     await tester.tap(find.byKey(const Key('home_profile')));
-    await pumpUntil(tester, find.byKey(const Key('profile_language')));
+    await pumpUntil(tester, find.byKey(const Key('profile_theme')));
     await tester.scrollUntilVisible(
       find.byKey(const Key('profile_logout')),
       300,

@@ -3,9 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 
-import '../../../../app/routes.dart';
 import '../../../../app/session_cubit.dart';
 import '../../../../design_system/design_system.dart';
 import '../../../../l10n/domain_l10n.dart';
@@ -175,8 +173,22 @@ class _FieldState extends State<_Field> {
   );
   late bool _hidden = widget.obscure;
 
+  /// Al salir del campo se valida lo que se escribió.
+  final FocusNode _focus = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _focus.addListener(() {
+      if (!_focus.hasFocus) {
+        context.read<OnboardingCubit>().fieldLeft(widget.field);
+      }
+    });
+  }
+
   @override
   void dispose() {
+    _focus.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -193,6 +205,7 @@ class _FieldState extends State<_Field> {
       child: TextField(
         key: Key('onboarding_${widget.field.name}'),
         controller: _controller,
+        focusNode: _focus,
         enabled: enabled,
         obscureText: _hidden,
         enableSuggestions: !widget.obscure,
@@ -426,16 +439,4 @@ class _WelcomeStep extends StatelessWidget {
       ],
     );
   }
-}
-
-/// Enlace del login al registro.
-class CreateAccountLink extends StatelessWidget {
-  const CreateAccountLink({super.key});
-
-  @override
-  Widget build(BuildContext context) => TextButton(
-    key: const Key('login_create_account'),
-    onPressed: () => context.push(Routes.register),
-    child: Text(context.l10n.createAccountLink),
-  );
 }

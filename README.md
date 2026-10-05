@@ -75,7 +75,7 @@ flutter test
 # E2E en un emulador o dispositivo, contra el backend real:
 #  1) login → home → movimientos
 #  2) login → transferencia propia → los saldos cambian (devuelve el dinero)
-flutter test integration_test/login_movements_test.dart integration_test/own_transfer_test.dart integration_test/language_test.dart -d emulator-5554
+flutter test integration_test/login_movements_test.dart integration_test/own_transfer_test.dart -d emulator-5554
 
 # Regenerar las capturas de docs/screenshots
 flutter drive --driver=test_driver/integration_test.dart \
@@ -152,9 +152,10 @@ Deep links soportados: `app://transfers`, `app://accounts/{id}`,
 Toda la app está traducida con `gen-l10n` (`lib/l10n/app_es.arb` y
 `app_en.arb`):
 
-- Antes de iniciar sesión se usa el idioma del teléfono (si no es español ni
-  inglés, español). Con sesión, el idioma de la preferencia del cliente;
-  cambiarlo en el perfil cambia toda la app al instante.
+- **El idioma de la app es el del teléfono** (el primero soportado de su
+  lista de idiomas; si ninguno lo es, español). No hay selector de idioma en
+  la app: si el cliente cambia el idioma del teléfono, la app cambia en vivo.
+  La app informa ese idioma al backend para que los push lleguen igual.
 - Montos (`$1.250,50` / `$1,250.50`), fechas, textos para lectores de
   pantalla y la notificación local siguen el idioma activo.
 - Los errores del backend se traducen por su `code`; nunca se muestra su

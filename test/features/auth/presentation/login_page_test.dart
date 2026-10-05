@@ -40,6 +40,7 @@ void main() {
   Future<void> pump(
     WidgetTester tester, {
     Locale locale = const Locale('es'),
+    String? savedName,
   }) => tester.pumpWidget(
     localizedApp(
       locale: locale,
@@ -49,7 +50,7 @@ void main() {
           BlocProvider<SessionCubit>.value(value: sessionCubit),
           BlocProvider<AppLockCubit>.value(value: lock),
         ],
-        child: const LoginPage(),
+        child: LoginPage(savedName: () async => savedName),
       ),
     ),
   );
@@ -167,7 +168,8 @@ void main() {
     expect(find.text('Username'), findsOneWidget);
     expect(find.text('Sign in'), findsOneWidget);
     expect(find.textContaining('Your user is locked'), findsOneWidget);
-    expect(find.text("Don't have an account? Create one"), findsOneWidget);
+    expect(find.text('Open an account'), findsOneWidget);
+    expect(find.text('Help'), findsOneWidget);
     expect(find.textContaining('Bienvenido'), findsNothing);
   });
 
@@ -189,18 +191,29 @@ void main() {
     });
 
     testWidgets(
-      'con sesión guardada y biometría activa hay dos formas de entrar',
+      'con sesión guardada: saludo por nombre y dos formas de entrar',
       (tester) async {
         when(() => lock.state).thenReturn(savedSession);
-        await pump(tester);
+        await pump(tester, savedName: 'Ana');
+        await tester.pump();
 
+        expect(find.text('Hola, Ana'), findsOneWidget);
         expect(find.text('Ingresar con huella o rostro'), findsOneWidget);
-        expect(find.byKey(const Key('login_submit')), findsOneWidget);
-        expect(find.text('o'), findsOneWidget);
+        expect(find.text('Usuario y contraseña'), findsOneWidget);
+        // El formulario aparece al elegir "Usuario y contraseña".
+        expect(find.byKey(const Key('login_submit')), findsNothing);
         expect(
           find.byKey(const Key('login_use_another_account')),
           findsOneWidget,
         );
+        // Con sesión guardada no se ofrece abrir otra cuenta.
+        expect(find.byKey(const Key('login_create_account')), findsNothing);
+
+        await tester.tap(find.byKey(const Key('login_show_password')));
+        await tester.pump();
+
+        expect(find.byKey(const Key('login_submit')), findsOneWidget);
+        expect(find.byKey(const Key('login_username')), findsOneWidget);
       },
     );
 
@@ -239,7 +252,8 @@ void main() {
       await tester.pump();
 
       expect(find.text('No pudimos verificar tu identidad.'), findsOneWidget);
-      expect(find.byKey(const Key('login_submit')), findsOneWidget);
+      // Sigue disponible la otra forma de entrar.
+      expect(find.byKey(const Key('login_show_password')), findsOneWidget);
     });
 
     testWidgets('"Usar otra cuenta" cierra la sesión guardada del todo', (
@@ -261,5 +275,26 @@ void main() {
       expect(find.text('Sign in with fingerprint or face'), findsOneWidget);
       expect(find.text('Not you? Use another account'), findsOneWidget);
     });
+  });
+
+  testWidgets('sin sesión guardada muestra el formulario y los accesos', (
+    tester,
+  ) async {
+    await pump(tester);
+
+    expect(find.text('Bienvenido a Nexo'), findsOneWidget);
+    expect(find.byKey(const Key('login_submit')), findsOneWidget);
+    expect(find.text('Abrir cuenta'), findsOneWidget);
+    expect(find.text('Ayuda'), findsOneWidget);
+  });
+
+  testWidgets('"Ayuda" abre la hoja de contacto', (tester) async {
+    await pump(tester);
+
+    await tester.tap(find.byKey(const Key('login_help')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('¿Necesitas ayuda?'), findsOneWidget);
+    expect(find.text('ayuda@nexo.ec'), findsOneWidget);
   });
 }

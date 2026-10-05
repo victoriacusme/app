@@ -153,28 +153,6 @@ class _ProfileContent extends StatelessWidget {
                   ],
                 ),
               ),
-              ListTile(
-                leading: const Icon(Icons.language),
-                title: Text(l10n.language),
-                trailing: DropdownButton<String>(
-                  key: const Key('profile_language'),
-                  value: prefs.language,
-                  underline: const SizedBox.shrink(),
-                  items: [
-                    DropdownMenuItem(
-                      value: 'es',
-                      child: Text(l10n.languageSpanish),
-                    ),
-                    DropdownMenuItem(
-                      value: 'en',
-                      child: Text(l10n.languageEnglish),
-                    ),
-                  ],
-                  onChanged: (v) {
-                    if (v != null) edit(prefs.copyWith(language: v));
-                  },
-                ),
-              ),
               SwitchListTile(
                 key: const Key('profile_notifications'),
                 secondary: const Icon(Icons.notifications_outlined),

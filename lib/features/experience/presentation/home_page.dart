@@ -60,15 +60,16 @@ class HomePage extends StatelessWidget {
           listener: (context, _) => _refresh(context),
         ),
         BlocListener<AppSettingsCubit, AppSettings>(
-          // Cambió una preferencia que afecta al home (idioma o promociones):
-          // se pide otra vez el layout, que el backend compone según ellas.
+          // Cambió algo que afecta al home (el idioma, al cambiar el del
+          // teléfono, o las promociones): se pide otra vez el layout, que el
+          // backend compone según las preferencias del cliente.
           // Solo entre preferencias del cliente con sesión: al cerrar sesión
           // vuelven los valores por defecto y no hay que recargar (los tokens
           // ya no existen y la llamada saldría sin autenticación).
           listenWhen: (prev, curr) =>
               prev.customerLoaded &&
               curr.customerLoaded &&
-              (prev.locale != curr.locale ||
+              (prev.language != curr.language ||
                   prev.showPromotions != curr.showPromotions),
           listener: (context, _) => context.read<ExperienceCubit>().load(),
         ),

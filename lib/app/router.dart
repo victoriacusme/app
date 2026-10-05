@@ -11,6 +11,7 @@ import '../features/auth/presentation/bloc/login_bloc.dart';
 import '../features/auth/presentation/onboarding/onboarding_cubit.dart';
 import '../features/auth/presentation/onboarding/onboarding_page.dart';
 import '../features/auth/presentation/pages/login_page.dart';
+import '../features/customer/domain/customer_repository.dart';
 import '../features/customer/presentation/profile_bloc.dart';
 import '../features/customer/presentation/profile_page.dart';
 import '../features/experience/presentation/experience_cubit.dart';
@@ -42,7 +43,10 @@ GoRouter createRouter(SessionCubit session, AppLockCubit lock) {
         path: Routes.login,
         builder: (_, _) => BlocProvider(
           create: (_) => getIt<LoginBloc>(),
-          child: const LoginPage(),
+          child: LoginPage(
+            savedName: getIt<CustomerRepository>().cachedFirstName,
+            fx: () => getIt<FxCubit>(),
+          ),
         ),
       ),
       GoRoute(

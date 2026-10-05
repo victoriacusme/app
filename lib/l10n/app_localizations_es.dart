@@ -433,15 +433,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get themeSystem => 'Sistema';
 
   @override
-  String get language => 'Idioma';
-
-  @override
-  String get languageSpanish => 'Español';
-
-  @override
-  String get languageEnglish => 'English';
-
-  @override
   String get notifications => 'Notificaciones';
 
   @override
@@ -749,4 +740,30 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get promoTransfersSubtitle =>
       '0% de comisión en todas tus transferencias';
+
+  @override
+  String loginHello(String name) {
+    return 'Hola, $name';
+  }
+
+  @override
+  String get loginWithPassword => 'Usuario y contraseña';
+
+  @override
+  String get openAccount => 'Abrir cuenta';
+
+  @override
+  String get help => 'Ayuda';
+
+  @override
+  String get helpTitle => '¿Necesitas ayuda?';
+
+  @override
+  String get helpPhone => 'Línea Nexo';
+
+  @override
+  String get helpEmail => 'Escríbenos';
+
+  @override
+  String get helpHours => 'Atención las 24 horas, todos los días.';
 }

@@ -285,9 +285,6 @@
   "themeLight": "Claro",
   "themeDark": "Oscuro",
   "themeSystem": "Sistema",
-  "language": "Idioma",
-  "languageSpanish": "Español",
-  "languageEnglish": "English",
   "notifications": "Notificaciones",
   "notificationsSubtitle": "Avisos de tus transferencias",
   "promotions": "Promociones",
@@ -477,5 +474,20 @@
     }
   },
   "promoTransfersTitle": "Black Friday Nexo",
-  "promoTransfersSubtitle": "0% de comisión en todas tus transferencias"
+  "promoTransfersSubtitle": "0% de comisión en todas tus transferencias",
+  "loginHello": "Hola, {name}",
+  "@loginHello": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "loginWithPassword": "Usuario y contraseña",
+  "openAccount": "Abrir cuenta",
+  "help": "Ayuda",
+  "helpTitle": "¿Necesitas ayuda?",
+  "helpPhone": "Línea Nexo",
+  "helpEmail": "Escríbenos",
+  "helpHours": "Atención las 24 horas, todos los días."
 }

@@ -31,6 +31,7 @@ final class OnboardingState extends Equatable {
     this.birthDate,
     this.acceptedTerms = false,
     this.showErrors = false,
+    this.touched = const {},
     this.submitting = false,
     this.serverErrors = const {},
     this.failure,
@@ -42,8 +43,12 @@ final class OnboardingState extends Equatable {
   final DateTime? birthDate;
   final bool acceptedTerms;
 
-  /// Los errores del paso se muestran tras intentar avanzar.
+  /// Los errores de todo el paso se muestran tras intentar avanzar.
   final bool showErrors;
+
+  /// Campos que el usuario ya dejó (perdieron el foco): su error se muestra
+  /// desde entonces y se actualiza mientras sigue escribiendo.
+  final Set<OnboardingField> touched;
   final bool submitting;
 
   /// Errores que devolvió el backend por campo (p. ej. usuario tomado).
@@ -96,7 +101,9 @@ final class OnboardingState extends Equatable {
 
   /// Error visible en pantalla (solo después de intentar avanzar).
   RegistrationError? visibleError(OnboardingField f) =>
-      showErrors || serverErrors.containsKey(f) ? errorOf(f) : null;
+      showErrors || touched.contains(f) || serverErrors.containsKey(f)
+      ? errorOf(f)
+      : null;
 
   bool isStepValid(OnboardingStep s) =>
       (fieldsByStep[s] ?? const []).every((f) => errorOf(f) == null);
@@ -117,6 +124,7 @@ final class OnboardingState extends Equatable {
     DateTime? birthDate,
     bool? acceptedTerms,
     bool? showErrors,
+    Set<OnboardingField>? touched,
     bool? submitting,
     Map<OnboardingField, RegistrationError>? serverErrors,
     Failure? Function()? failure,
@@ -127,6 +135,7 @@ final class OnboardingState extends Equatable {
     birthDate: birthDate ?? this.birthDate,
     acceptedTerms: acceptedTerms ?? this.acceptedTerms,
     showErrors: showErrors ?? this.showErrors,
+    touched: touched ?? this.touched,
     submitting: submitting ?? this.submitting,
     serverErrors: serverErrors ?? this.serverErrors,
     failure: failure != null ? failure() : this.failure,
@@ -140,6 +149,7 @@ final class OnboardingState extends Equatable {
     birthDate,
     acceptedTerms,
     showErrors,
+    touched,
     submitting,
     serverErrors,
     failure,
@@ -175,14 +185,31 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     );
   }
 
+  /// El usuario dejó el campo: desde ahora se valida y se muestra su error.
+  void fieldLeft(OnboardingField field) {
+    if (state.touched.contains(field)) return;
+    emit(state.copyWith(touched: {...state.touched, field}));
+  }
+
   void birthDateChanged(DateTime date) {
     final serverErrors = {...state.serverErrors}
       ..remove(OnboardingField.birthDate);
-    emit(state.copyWith(birthDate: date, serverErrors: serverErrors));
+    // Al elegir la fecha se valida en el momento (p. ej. mayoría de edad).
+    emit(
+      state.copyWith(
+        birthDate: date,
+        serverErrors: serverErrors,
+        touched: {...state.touched, OnboardingField.birthDate},
+      ),
+    );
   }
 
-  void termsChanged({required bool accepted}) =>
-      emit(state.copyWith(acceptedTerms: accepted));
+  void termsChanged({required bool accepted}) => emit(
+    state.copyWith(
+      acceptedTerms: accepted,
+      touched: {...state.touched, OnboardingField.terms},
+    ),
+  );
 
   /// "Continuar" en un paso.
   Future<void> next() async {
