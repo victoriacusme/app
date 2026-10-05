@@ -344,35 +344,29 @@ abstract class AppLocalizations {
   /// **'¿No tienes cuenta? Crea una'**
   String get createAccountLink;
 
-  /// No description provided for @lockedTitle.
-  ///
-  /// In es, this message translates to:
-  /// **'Nexo Bank está bloqueado'**
-  String get lockedTitle;
-
   /// No description provided for @lockedFailed.
   ///
   /// In es, this message translates to:
   /// **'No pudimos verificar tu identidad.'**
   String get lockedFailed;
 
-  /// No description provided for @lockedHint.
+  /// No description provided for @biometricLogin.
   ///
   /// In es, this message translates to:
-  /// **'Usa tu huella o rostro para continuar.'**
-  String get lockedHint;
+  /// **'Ingresar con huella o rostro'**
+  String get biometricLogin;
 
-  /// No description provided for @unlock.
+  /// No description provided for @orDivider.
   ///
   /// In es, this message translates to:
-  /// **'Desbloquear'**
-  String get unlock;
+  /// **'o'**
+  String get orDivider;
 
-  /// No description provided for @lockedUsePassword.
+  /// No description provided for @useAnotherAccount.
   ///
   /// In es, this message translates to:
-  /// **'Ingresar con mi contraseña'**
-  String get lockedUsePassword;
+  /// **'¿No eres tú? Usar otra cuenta'**
+  String get useAnotherAccount;
 
   /// No description provided for @biometricUnlockReason.
   ///

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../app/app_lock_cubit.dart';
-import '../../../app/session_cubit.dart';
 import '../../../design_system/design_system.dart';
 import '../../../l10n/domain_l10n.dart';
 import '../../../l10n/l10n.dart';
@@ -199,7 +198,9 @@ class _ProfileContent extends StatelessWidget {
         const SizedBox(height: Spacing.lg),
         OutlinedButton.icon(
           key: const Key('profile_logout'),
-          onPressed: () => context.read<SessionCubit>().logout(),
+          // Con biometría activa, bloquea la sesión (se vuelve a entrar con
+          // huella o rostro); si no, la cierra del todo.
+          onPressed: () => context.read<AppLockCubit>().signOut(),
           icon: const Icon(Icons.logout),
           label: Text(l10n.logout),
         ),

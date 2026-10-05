@@ -10,9 +10,16 @@ selector de apps no debe mostrar saldos.
 ## Decisión
 - **Biometría (`local_auth`)**: opcional, se activa desde el perfil y solo
   en ese dispositivo (se guarda en secure storage). Activarla exige
-  autenticarse primero. Con la biometría activa, la app se bloquea al
-  abrirla con una sesión guardada y al volver de segundo plano tras 1 min.
-  "Ingresar con mi contraseña" cierra la sesión.
+  autenticarse primero.
+- **El login ofrece dos formas de entrar**: usuario y contraseña, y el botón
+  "Ingresar con huella o rostro". El botón aparece cuando hay una sesión
+  guardada en el dispositivo y la biometría está activada.
+- Con la biometría activada, la sesión queda guardada pero **bloqueada**
+  (la app muestra el login) al abrir la app, al volver de segundo plano tras
+  1 min y al tocar "Cerrar sesión". Así se puede volver a entrar con huella.
+- "¿No eres tú? Usar otra cuenta" cierra la sesión del todo y la revoca en
+  el backend. Sin biometría activada, "Cerrar sesión" también la cierra del
+  todo.
 - La biometría **desbloquea la sesión local**; no reemplaza la
   autenticación con el backend (los tokens siguen siendo los de ms-auth).
 - **Privacidad en el selector de apps**: en Android release se usa

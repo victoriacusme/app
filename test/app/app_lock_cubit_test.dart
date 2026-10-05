@@ -126,4 +126,45 @@ void main() {
 
     expect(cubit.state.locked, isFalse);
   });
+
+  group('cerrar sesión', () {
+    test(
+      'con biometría activa solo bloquea: la sesión queda guardada',
+      () async {
+        when(() => session.state).thenReturn(const SessionAuthenticated(s));
+        when(() => session.logout()).thenAnswer((_) async {});
+        final cubit = build();
+        await cubit.init();
+
+        await cubit.signOut();
+
+        expect(cubit.state.locked, isTrue);
+        verifyNever(() => session.logout());
+      },
+    );
+
+    test('sin biometría cierra la sesión del todo', () async {
+      when(settings.isEnabled).thenAnswer((_) async => false);
+      when(() => session.state).thenReturn(const SessionAuthenticated(s));
+      when(() => session.logout()).thenAnswer((_) async {});
+      final cubit = build();
+      await cubit.init();
+
+      await cubit.signOut();
+
+      verify(() => session.logout()).called(1);
+      expect(cubit.state.locked, isFalse);
+    });
+
+    test('entrar con contraseña desbloquea', () async {
+      final cubit = build()
+        ..emit(
+          const AppLockState(available: true, enabled: true, locked: true),
+        );
+
+      cubit.passwordSignedIn();
+
+      expect(cubit.state.locked, isFalse);
+    });
+  });
 }

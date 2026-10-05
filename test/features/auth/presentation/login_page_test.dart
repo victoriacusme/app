@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:nexo_bank/app/app_lock_cubit.dart';
 import 'package:nexo_bank/app/session_cubit.dart';
 import 'package:nexo_bank/features/auth/domain/session.dart';
 import 'package:nexo_bank/features/auth/presentation/bloc/login_bloc.dart';
@@ -19,6 +20,7 @@ class _MockSessionCubit extends MockCubit<SessionState>
 void main() {
   late _MockLoginBloc loginBloc;
   late _MockSessionCubit sessionCubit;
+  late MockAppLockCubit lock;
 
   setUpAll(() {
     registerFallbackValue(const LoginSubmitted(username: '', password: ''));
@@ -28,6 +30,8 @@ void main() {
   setUp(() {
     loginBloc = _MockLoginBloc();
     sessionCubit = _MockSessionCubit();
+    lock = MockAppLockCubit();
+    when(() => lock.state).thenReturn(const AppLockState());
     when(() => loginBloc.state).thenReturn(const LoginState());
     when(() => sessionCubit.state).thenReturn(const SessionUnauthenticated());
   });
@@ -42,6 +46,7 @@ void main() {
         providers: [
           BlocProvider<LoginBloc>.value(value: loginBloc),
           BlocProvider<SessionCubit>.value(value: sessionCubit),
+          BlocProvider<AppLockCubit>.value(value: lock),
         ],
         child: const LoginPage(),
       ),
@@ -131,6 +136,8 @@ void main() {
     await tester.pump();
 
     verify(() => sessionCubit.authenticated(session)).called(1);
+    // Entrar con contraseña también desbloquea una sesión guardada.
+    verify(() => lock.passwordSignedIn()).called(1);
   });
 
   testWidgets('ofrece crear una cuenta', (tester) async {
@@ -161,5 +168,97 @@ void main() {
     expect(find.textContaining('Your user is locked'), findsOneWidget);
     expect(find.text("Don't have an account? Create one"), findsOneWidget);
     expect(find.textContaining('Bienvenido'), findsNothing);
+  });
+
+  group('ingreso con biometría', () {
+    const savedSession = AppLockState(
+      available: true,
+      enabled: true,
+      locked: true,
+    );
+
+    testWidgets('sin sesión guardada solo se ofrece usuario y contraseña', (
+      tester,
+    ) async {
+      await pump(tester);
+
+      expect(find.byKey(const Key('login_biometric')), findsNothing);
+      expect(find.byKey(const Key('login_submit')), findsOneWidget);
+      expect(find.byKey(const Key('login_create_account')), findsOneWidget);
+    });
+
+    testWidgets(
+      'con sesión guardada y biometría activa hay dos formas de entrar',
+      (tester) async {
+        when(() => lock.state).thenReturn(savedSession);
+        await pump(tester);
+
+        expect(find.text('Ingresar con huella o rostro'), findsOneWidget);
+        expect(find.byKey(const Key('login_submit')), findsOneWidget);
+        expect(find.text('o'), findsOneWidget);
+        expect(
+          find.byKey(const Key('login_use_another_account')),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets('si la biometría no está activada no aparece el botón', (
+      tester,
+    ) async {
+      when(() => lock.state)
+          .thenReturn(const AppLockState(available: true, locked: true));
+      await pump(tester);
+
+      expect(find.byKey(const Key('login_biometric')), findsNothing);
+    });
+
+    testWidgets('tocar el botón pide la huella o el rostro', (tester) async {
+      when(() => lock.state).thenReturn(savedSession);
+      when(() => lock.unlock(reason: any(named: 'reason')))
+          .thenAnswer((_) async => true);
+      await pump(tester);
+
+      await tester.tap(find.byKey(const Key('login_biometric')));
+      await tester.pump();
+
+      verify(() => lock.unlock(reason: 'Desbloquea Nexo Bank')).called(1);
+      expect(find.byKey(const Key('login_biometric_error')), findsNothing);
+    });
+
+    testWidgets('si la biometría falla lo indica y deja usar la contraseña', (
+      tester,
+    ) async {
+      when(() => lock.state).thenReturn(savedSession);
+      when(() => lock.unlock(reason: any(named: 'reason')))
+          .thenAnswer((_) async => false);
+      await pump(tester);
+
+      await tester.tap(find.byKey(const Key('login_biometric')));
+      await tester.pump();
+
+      expect(find.text('No pudimos verificar tu identidad.'), findsOneWidget);
+      expect(find.byKey(const Key('login_submit')), findsOneWidget);
+    });
+
+    testWidgets('"Usar otra cuenta" cierra la sesión guardada del todo', (
+      tester,
+    ) async {
+      when(() => lock.state).thenReturn(savedSession);
+      when(() => sessionCubit.logout()).thenAnswer((_) async {});
+      await pump(tester);
+
+      await tester.tap(find.byKey(const Key('login_use_another_account')));
+
+      verify(() => sessionCubit.logout()).called(1);
+    });
+
+    testWidgets('en inglés el botón también está traducido', (tester) async {
+      when(() => lock.state).thenReturn(savedSession);
+      await pump(tester, locale: const Locale('en'));
+
+      expect(find.text('Sign in with fingerprint or face'), findsOneWidget);
+      expect(find.text('Not you? Use another account'), findsOneWidget);
+    });
   });
 }

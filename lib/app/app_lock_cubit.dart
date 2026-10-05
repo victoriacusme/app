@@ -33,12 +33,18 @@ final class AppLockState extends Equatable {
   List<Object?> get props => [available, enabled, locked];
 }
 
-/// Bloqueo con biometría para volver a entrar sin escribir la contraseña:
+/// Bloqueo con biometría para volver a entrar sin escribir la contraseña.
 ///
-/// - Al abrir la app con una sesión guardada.
-/// - Al volver de segundo plano tras [relockAfter].
+/// Con la biometría activada en este dispositivo, la sesión queda guardada
+/// pero bloqueada (la app muestra el login con el botón de biometría):
 ///
-/// Un login con contraseña nunca queda bloqueado.
+/// - al abrir la app con una sesión guardada;
+/// - al volver de segundo plano tras [relockAfter];
+/// - al tocar "Cerrar sesión" ([signOut]).
+///
+/// Desde el login se entra con biometría ([unlock]) o con usuario y
+/// contraseña ([passwordSignedIn]). "Usar otra cuenta" cierra la sesión del
+/// todo. Sin biometría activada, "Cerrar sesión" la cierra del todo.
 class AppLockCubit extends Cubit<AppLockState> {
   AppLockCubit({
     required this._biometrics,
@@ -101,6 +107,20 @@ class AppLockCubit extends Cubit<AppLockState> {
     if (ok) emit(state.copyWith(locked: false));
     return ok;
   }
+
+  /// "Cerrar sesión": con biometría activa solo bloquea (la sesión queda
+  /// guardada para volver a entrar con huella o rostro); si no, la cierra
+  /// del todo y se revoca en el backend.
+  Future<void> signOut() async {
+    if (_active && _session.state is SessionAuthenticated) {
+      emit(state.copyWith(locked: true));
+      return;
+    }
+    await _session.logout();
+  }
+
+  /// Se entró con usuario y contraseña: la sesión ya no está bloqueada.
+  void passwordSignedIn() => emit(state.copyWith(locked: false));
 
   /// Activar exige confirmar la identidad antes; desactivar no.
   Future<bool> setEnabled({

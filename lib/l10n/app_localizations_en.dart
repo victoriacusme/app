@@ -166,19 +166,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get createAccountLink => 'Don\'t have an account? Create one';
 
   @override
-  String get lockedTitle => 'Nexo Bank is locked';
-
-  @override
   String get lockedFailed => 'We couldn\'t verify your identity.';
 
   @override
-  String get lockedHint => 'Use your fingerprint or face to continue.';
+  String get biometricLogin => 'Sign in with fingerprint or face';
 
   @override
-  String get unlock => 'Unlock';
+  String get orDivider => 'or';
 
   @override
-  String get lockedUsePassword => 'Sign in with my password';
+  String get useAnotherAccount => 'Not you? Use another account';
 
   @override
   String get biometricUnlockReason => 'Unlock Nexo Bank';

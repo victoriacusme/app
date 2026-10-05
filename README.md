@@ -186,7 +186,7 @@ Para agregar un texto: añadirlo en ambos `.arb` y usar `context.l10n.clave`.
 | Certificate pinning | Por clave pública (SPKI), activo con `PIN_SHA256` en producción | [0009](docs/adr/0009-certificate-pinning-spki.md) |
 | Tokens | Solo en Keychain/Keystore; refresh rotativo con cola ante 401 | — |
 | Caché cifrada | Hive con AES-256; se borra al cerrar sesión | [0003](docs/adr/0003-hive-ce-cifrado.md) |
-| Biometría | Opcional, por dispositivo, para volver a entrar | [0010](docs/adr/0010-biometria-y-privacidad.md) |
+| Biometría | Opcional, por dispositivo: el login ofrece "Ingresar con huella o rostro" junto a usuario y contraseña | [0010](docs/adr/0010-biometria-y-privacidad.md) |
 | Privacidad | `FLAG_SECURE` en Android release; la app se tapa en el selector de apps | [0010](docs/adr/0010-biometria-y-privacidad.md) |
 | Datos enmascarados | Cuentas `****4521`, cédula y teléfono enmascarados desde el backend | — |
 | Dinero | Idempotency-Key por operación, sin reintentos ni cola sin conexión | [0006](docs/adr/0006-dinero-sin-conexion.md) |

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../app/app_lock_cubit.dart';
 import '../../../../app/session_cubit.dart';
 import '../../../../design_system/design_system.dart';
 import '../../../../l10n/l10n.dart';
@@ -14,8 +15,11 @@ class LoginPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocListener<LoginBloc, LoginState>(
       listenWhen: (prev, curr) => curr.status == LoginStatus.success,
-      listener: (context, state) =>
-          context.read<SessionCubit>().authenticated(state.session!),
+      listener: (context, state) {
+        context.read<SessionCubit>().authenticated(state.session!);
+        // Entrar con contraseña también desbloquea una sesión guardada.
+        context.read<AppLockCubit>().passwordSignedIn();
+      },
       child: Scaffold(
         body: SafeArea(
           child: Center(
@@ -44,6 +48,15 @@ class _LoginFormState extends State<_LoginForm> {
   final _formKey = GlobalKey<FormState>();
   final _username = TextEditingController();
   final _password = TextEditingController();
+  bool _biometricFailed = false;
+
+  Future<void> _biometricLogin() async {
+    setState(() => _biometricFailed = false);
+    final ok = await context.read<AppLockCubit>().unlock(
+      reason: context.l10n.biometricUnlockReason,
+    );
+    if (mounted && !ok) setState(() => _biometricFailed = true);
+  }
 
   @override
   void dispose() {
@@ -72,6 +85,12 @@ class _LoginFormState extends State<_LoginForm> {
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final validators = LoginValidators(l10n);
+    // Hay una sesión guardada en este dispositivo y la biometría está
+    // activada: se ofrece entrar con huella o rostro.
+    final canUseBiometrics = context.select(
+      (AppLockCubit c) =>
+          c.state.locked && c.state.enabled && c.state.available,
+    );
     final expired = context.select(
       (SessionCubit c) =>
           c.state is SessionUnauthenticated &&
@@ -99,6 +118,22 @@ class _LoginFormState extends State<_LoginForm> {
                   style: theme.textTheme.headlineSmall,
                 ),
                 const SizedBox(height: Spacing.xl),
+                if (canUseBiometrics) ...[
+                  if (_biometricFailed) ...[
+                    InlineMessage(
+                      key: const Key('login_biometric_error'),
+                      message: l10n.lockedFailed,
+                    ),
+                    const SizedBox(height: Spacing.md),
+                  ],
+                  FilledButton.tonalIcon(
+                    key: const Key('login_biometric'),
+                    onPressed: state.isSubmitting ? null : _biometricLogin,
+                    icon: const Icon(Icons.fingerprint),
+                    label: Text(l10n.biometricLogin),
+                  ),
+                  const _OrDivider(),
+                ],
                 if (expired && state.status == LoginStatus.initial) ...[
                   InlineMessage(
                     message: l10n.loginSessionExpired,
@@ -147,7 +182,16 @@ class _LoginFormState extends State<_LoginForm> {
                   onPressed: _submit,
                 ),
                 const SizedBox(height: Spacing.sm),
-                const CreateAccountLink(),
+                if (canUseBiometrics)
+                  // Otra persona usa el teléfono: se cierra la sesión guardada
+                  // del todo (se revoca en el backend).
+                  TextButton(
+                    key: const Key('login_use_another_account'),
+                    onPressed: () => context.read<SessionCubit>().logout(),
+                    child: Text(l10n.useAnotherAccount),
+                  )
+                else
+                  const CreateAccountLink(),
               ],
             ),
           ),
@@ -155,6 +199,25 @@ class _LoginFormState extends State<_LoginForm> {
       },
     );
   }
+}
+
+class _OrDivider extends StatelessWidget {
+  const _OrDivider();
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: Spacing.md),
+    child: Row(
+      children: [
+        const Expanded(child: Divider()),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+          child: Text(context.l10n.orDivider),
+        ),
+        const Expanded(child: Divider()),
+      ],
+    ),
+  );
 }
 
 /// Mismos límites que valida ms-auth (`LoginRequest`).
