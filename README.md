@@ -36,8 +36,31 @@ flutter build apk --release \
   --dart-define=PIN_SHA256=<pin actual>,<pin de respaldo>
 ```
 
-En debug se permite HTTP solo hacia `10.0.2.2`, `localhost` y `127.0.0.1`.
-Los builds de release exigen HTTPS.
+### Backend: sin configurar nada
+
+Con el **Run por defecto del IDE** (o `flutter run` a secas) la app elige sola
+el backend según dónde corre:
+
+| Dispositivo | Backend |
+|---|---|
+| Cualquier teléfono físico (WiFi o datos) | Túnel HTTPS fijo `https://ragweed-onshore-correct.ngrok-free.dev` → gateway local |
+| Emulador de Android | `http://10.0.2.2:8080` (la PC, directo) |
+| Simulador de iOS | `http://localhost:8080` (la PC, directo) |
+
+Al arrancar se imprime en consola `Backend (staging|dev): <url>`.
+
+Requisito para teléfonos físicos: el backend y el túnel levantados en la PC
+(`docker compose --profile tunnel up -d` en `app-backend`).
+
+Una URL explícita siempre manda (`config/*.json`), por ejemplo para
+producción o para un APK de testers:
+
+```bash
+flutter build apk --release --dart-define-from-file=config/prod.json
+```
+
+En debug se permite HTTP sin TLS (para el backend local). Los builds de
+release exigen HTTPS.
 
 Usuarios de prueba: `ana` (joven), `carlos` (premium) y `lucia`
 (emprendedora), con contraseña `Nexo2026*`. Cada uno ve un home distinto.

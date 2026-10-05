@@ -19,16 +19,8 @@ void main() {
     Finder field(String name) => find.byKey(Key('onboarding_$name'));
 
     Future<void> next() async {
-      const button = Key('onboarding_next');
-      // Deja que el teclado termine de cerrarse antes de buscar el botón.
-      await tester.pump(const Duration(milliseconds: 600));
-      // En pantallas chicas el botón queda debajo del formulario.
-      await tester.dragUntilVisible(
-        find.byKey(button),
-        find.byType(ListView).last,
-        const Offset(0, -200),
-      );
-      await tapVisible(tester, find.byKey(button));
+      // El botón está fijo abajo, siempre visible.
+      await tester.tap(find.byKey(const Key('onboarding_next')));
       await tester.pump(const Duration(milliseconds: 500));
     }
 

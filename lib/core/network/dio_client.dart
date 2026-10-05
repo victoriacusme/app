@@ -22,7 +22,7 @@ Dio createDioClient({
   required TokenStore tokenStore,
   required TokenRefresher refresh,
   required void Function() onSessionExpired,
-  String baseUrl = Env.apiBaseUrl,
+  String? baseUrl,
   CircuitBreakerInterceptor? circuitBreaker,
   Delay? retryDelay,
   CertificatePinning? pinning,
@@ -30,7 +30,7 @@ Dio createDioClient({
 }) {
   final dio = Dio(
     BaseOptions(
-      baseUrl: baseUrl,
+      baseUrl: baseUrl ?? Env.apiBaseUrl,
       connectTimeout: Env.connectTimeout,
       receiveTimeout: Env.receiveTimeout,
       contentType: Headers.jsonContentType,

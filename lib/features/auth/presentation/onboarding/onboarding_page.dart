@@ -100,26 +100,41 @@ class _StepLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = context.watch<OnboardingCubit>().state;
     final l10n = context.l10n;
-    return ListView(
-      padding: const EdgeInsets.all(Spacing.lg),
+    // El botón queda fijo abajo, fuera del scroll: siempre visible aunque el
+    // formulario sea largo o el teclado achique la pantalla.
+    return Column(
       children: [
-        if (state.failure != null) ...[
-          InlineMessage(
-            key: const Key('onboarding_error'),
-            message: state.failure!.localized(l10n),
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.all(Spacing.lg),
+            children: [
+              if (state.failure != null) ...[
+                InlineMessage(
+                  key: const Key('onboarding_error'),
+                  message: state.failure!.localized(l10n),
+                ),
+                const SizedBox(height: Spacing.md),
+              ],
+              ...children,
+            ],
           ),
-          const SizedBox(height: Spacing.md),
-        ],
-        ...children,
-        const SizedBox(height: Spacing.lg),
-        PrimaryButton(
-          key: const Key('onboarding_next'),
-          label: buttonLabel ?? l10n.continueAction,
-          loading: state.submitting,
-          onPressed: () {
-            FocusScope.of(context).unfocus();
-            context.read<OnboardingCubit>().next();
-          },
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            Spacing.lg,
+            Spacing.sm,
+            Spacing.lg,
+            Spacing.lg,
+          ),
+          child: PrimaryButton(
+            key: const Key('onboarding_next'),
+            label: buttonLabel ?? l10n.continueAction,
+            loading: state.submitting,
+            onPressed: () {
+              FocusScope.of(context).unfocus();
+              context.read<OnboardingCubit>().next();
+            },
+          ),
         ),
       ],
     );

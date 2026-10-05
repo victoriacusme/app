@@ -10,12 +10,15 @@ import 'app/app_lock_cubit.dart';
 import 'app/app_settings_cubit.dart';
 import 'app/di.dart';
 import 'app/session_cubit.dart';
+import 'core/config/env.dart';
 import 'core/connectivity/connectivity_cubit.dart';
 import 'core/storage/encrypted_cache.dart';
 import 'features/notifications/infrastructure/local_notifications_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Backend según el dispositivo (teléfono → túnel HTTPS, emulador → PC).
+  await Env.init();
   // Nombres de meses y días para las fechas en español e inglés.
   await initializeDateFormatting();
 
