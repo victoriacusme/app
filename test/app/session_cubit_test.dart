@@ -81,11 +81,34 @@ void main() {
         onSigningOut: () async => calls.add('unregister'),
       );
 
-      cubit.authenticated(session);
+      await cubit.authenticated(session);
       await Future<void>.delayed(Duration.zero);
       await cubit.logout();
 
       expect(calls, ['register', 'unregister', 'logout', 'clear']);
     },
   );
+
+  test(
+    'si entra un cliente distinto se borran los datos del anterior',
+    () async {
+      final cubit = build()..emit(const SessionAuthenticated(session));
+
+      await cubit.authenticated(const Session(customerId: 'otro'));
+
+      expect(clears, 1);
+      expect(
+        cubit.state,
+        const SessionAuthenticated(Session(customerId: 'otro')),
+      );
+    },
+  );
+
+  test('el mismo cliente que vuelve a entrar conserva sus datos', () async {
+    final cubit = build()..emit(const SessionAuthenticated(session));
+
+    await cubit.authenticated(session);
+
+    expect(clears, 0);
+  });
 }

@@ -1,6 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../tokens.dart';
+import 'nexo_logo.dart';
+
 /// Tapa el contenido cuando la app deja de estar en primer plano, para que
 /// el selector de apps no muestre saldos ni datos del cliente.
 ///
@@ -56,7 +59,6 @@ class _PrivacyCoverState extends State<PrivacyCover> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Stack(
       children: [
         widget.child,
@@ -64,14 +66,10 @@ class _PrivacyCoverState extends State<PrivacyCover> {
           Positioned.fill(
             child: ColoredBox(
               key: const Key('privacy_cover'),
-              color: scheme.primary,
-              child: Center(
-                child: Icon(
-                  Icons.account_balance,
-                  size: 72,
-                  color: scheme.onPrimary,
-                ),
-              ),
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? NexoColors.splashDark
+                  : NexoColors.splashLight,
+              child: const Center(child: NexoLogo()),
             ),
           ),
       ],

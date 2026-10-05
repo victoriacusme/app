@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nexo_bank/design_system/design_system.dart';
 
+import '../helpers/pump_app.dart';
+
 void main() {
   testWidgets('tapa los saldos al ir a segundo plano y avisa al volver', (
     tester,
@@ -10,7 +12,7 @@ void main() {
     var backgrounded = 0;
     var foregrounded = 0;
     await tester.pumpWidget(
-      MaterialApp(
+      localizedApp(
         home: PrivacyCover(
           onBackgrounded: () => backgrounded++,
           onForegrounded: () => foregrounded++,
@@ -42,7 +44,7 @@ void main() {
   ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
     await tester.pumpWidget(
-      const MaterialApp(home: PrivacyCover(child: Text('saldo'))),
+      localizedApp(home: const PrivacyCover(child: Text('saldo'))),
     );
 
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
@@ -57,7 +59,7 @@ void main() {
   ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
     await tester.pumpWidget(
-      const MaterialApp(home: PrivacyCover(child: Text('saldo'))),
+      localizedApp(home: const PrivacyCover(child: Text('saldo'))),
     );
 
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);

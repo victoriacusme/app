@@ -15,6 +15,8 @@ final class AppSettings extends Equatable {
     this.themeMode = ThemeMode.system,
     this.notificationsEnabled = true,
     this.locale,
+    this.showPromotions = true,
+    this.customerLoaded = false,
   });
 
   final ThemeMode themeMode;
@@ -24,13 +26,26 @@ final class AppSettings extends Equatable {
   /// iniciar sesión o si no hay preferencia).
   final Locale? locale;
 
+  /// El cliente quiere ver promociones en su inicio.
+  final bool showPromotions;
+
+  /// Las preferencias vienen del cliente con sesión (no son los valores por
+  /// defecto de antes del login o después del logout).
+  final bool customerLoaded;
+
   /// Idioma efectivo de la app (`es` o `en`).
   String get languageCode => AppLanguages.resolve(
     locale?.languageCode ?? PlatformDispatcher.instance.locale.languageCode,
   );
 
   @override
-  List<Object?> get props => [themeMode, notificationsEnabled, locale];
+  List<Object?> get props => [
+    themeMode,
+    notificationsEnabled,
+    locale,
+    showPromotions,
+    customerLoaded,
+  ];
 }
 
 /// Aplica en toda la app las preferencias del cliente (tema, idioma y
@@ -72,6 +87,8 @@ class AppSettingsCubit extends Cubit<AppSettings> {
       },
       notificationsEnabled: p.notificationsEnabled,
       locale: Locale(AppLanguages.resolve(p.language)),
+      showPromotions: p.showPromotions,
+      customerLoaded: true,
     ),
   );
 

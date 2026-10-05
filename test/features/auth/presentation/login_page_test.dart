@@ -30,6 +30,7 @@ void main() {
   setUp(() {
     loginBloc = _MockLoginBloc();
     sessionCubit = _MockSessionCubit();
+    when(() => sessionCubit.authenticated(any())).thenAnswer((_) async {});
     lock = MockAppLockCubit();
     when(() => lock.state).thenReturn(const AppLockState());
     when(() => loginBloc.state).thenReturn(const LoginState());

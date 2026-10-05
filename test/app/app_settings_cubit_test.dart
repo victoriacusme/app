@@ -45,6 +45,7 @@ void main() {
         themeMode: ThemeMode.dark,
         notificationsEnabled: false,
         locale: Locale('es'),
+        customerLoaded: true,
       ),
     ],
   );
@@ -59,7 +60,11 @@ void main() {
       sessionStates.add(const SessionUnauthenticated());
     },
     expect: () => const [
-      AppSettings(themeMode: ThemeMode.dark, locale: Locale('es')),
+      AppSettings(
+        themeMode: ThemeMode.dark,
+        locale: Locale('es'),
+        customerLoaded: true,
+      ),
       AppSettings(),
     ],
     verify: (_) => verify(customers.watchProfile).called(1),
@@ -72,6 +77,16 @@ void main() {
     verify: (c) {
       expect(c.state.locale, const Locale('en'));
       expect(c.state.languageCode, 'en');
+    },
+  );
+
+  blocTest<AppSettingsCubit, AppSettings>(
+    'aplica la preferencia de promociones',
+    build: () => AppSettingsCubit(session: session, customers: customers),
+    act: (_) => prefs.add(const Preferences(showPromotions: false)),
+    verify: (c) {
+      expect(c.state.showPromotions, isFalse);
+      expect(c.state.customerLoaded, isTrue);
     },
   );
 }

@@ -60,14 +60,16 @@ class HomePage extends StatelessWidget {
           listener: (context, _) => _refresh(context),
         ),
         BlocListener<AppSettingsCubit, AppSettings>(
-          // Solo ante un cambio real de idioma (es → en o en → es) se pide
-          // otra vez el layout. Al cerrar sesión el idioma pasa a `null`: ahí
-          // no se recarga, porque los tokens ya no existen y la llamada saldría
-          // sin autenticación (el backend respondería 401).
+          // Cambió una preferencia que afecta al home (idioma o promociones):
+          // se pide otra vez el layout, que el backend compone según ellas.
+          // Solo entre preferencias del cliente con sesión: al cerrar sesión
+          // vuelven los valores por defecto y no hay que recargar (los tokens
+          // ya no existen y la llamada saldría sin autenticación).
           listenWhen: (prev, curr) =>
-              prev.locale != null &&
-              curr.locale != null &&
-              prev.locale != curr.locale,
+              prev.customerLoaded &&
+              curr.customerLoaded &&
+              (prev.locale != curr.locale ||
+                  prev.showPromotions != curr.showPromotions),
           listener: (context, _) => context.read<ExperienceCubit>().load(),
         ),
       ],
@@ -86,8 +88,15 @@ class HomePage extends StatelessWidget {
         body: BlocBuilder<ExperienceCubit, ExperienceLayout?>(
           builder: (context, layout) {
             if (layout == null) return const _HomeSkeleton();
+            // Si el cliente no quiere promociones se ocultan al instante,
+            // sin esperar a que llegue el layout nuevo del backend.
+            final showPromotions = context.select(
+              (AppSettingsCubit c) => c.state.showPromotions,
+            );
             final children = [
-              for (final spec in layout.components) ?components.build(spec),
+              for (final spec in layout.components)
+                if (showPromotions || spec.type != 'promo_banner')
+                  ?components.build(spec),
             ];
             return RefreshIndicator(
               onRefresh: () => _refresh(context),

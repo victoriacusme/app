@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -16,7 +18,7 @@ class LoginPage extends StatelessWidget {
     return BlocListener<LoginBloc, LoginState>(
       listenWhen: (prev, curr) => curr.status == LoginStatus.success,
       listener: (context, state) {
-        context.read<SessionCubit>().authenticated(state.session!);
+        unawaited(context.read<SessionCubit>().authenticated(state.session!));
         // Entrar con contraseña también desbloquea una sesión guardada.
         context.read<AppLockCubit>().passwordSignedIn();
       },
@@ -105,12 +107,7 @@ class _LoginFormState extends State<_LoginForm> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Icon(
-                  Icons.account_balance,
-                  size: 56,
-                  color: theme.colorScheme.primary,
-                  semanticLabel: l10n.appTitle,
-                ),
+                const Center(child: NexoLogo(size: 64)),
                 const SizedBox(height: Spacing.md),
                 Text(
                   l10n.loginWelcome,

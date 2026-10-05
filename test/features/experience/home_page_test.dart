@@ -296,35 +296,99 @@ void main() {
     },
   );
 
-  group('recarga del layout por idioma', () {
+  group('recarga del layout por preferencias', () {
     Future<void> pumpWith(
       WidgetTester tester,
       AppSettings initial,
-      AppSettings next,
-    ) async {
+      AppSettings next, {
+      ExperienceLayout? layout,
+    }) async {
       final settings = MockAppSettingsCubit();
       whenListen(settings, Stream.value(next), initialState: initial);
-      await pump(tester, youngHome, settings: settings);
+      await pump(tester, layout ?? youngHome, settings: settings);
       await tester.pump();
     }
+
+    const es = AppSettings(locale: Locale('es'), customerLoaded: true);
 
     testWidgets('al cambiar de idioma se vuelve a pedir el layout', (
       tester,
     ) async {
       await pumpWith(
         tester,
-        const AppSettings(locale: Locale('es')),
-        const AppSettings(locale: Locale('en')),
+        es,
+        const AppSettings(locale: Locale('en'), customerLoaded: true),
       );
 
       verify(() => experience.load()).called(1);
     });
 
-    testWidgets('al cerrar sesión (idioma → null) NO se pide el layout: '
+    testWidgets(
+      'al desactivar promociones se ocultan al instante y se pide el layout',
+      (tester) async {
+        final withPromo = ExperienceLayout(
+          screen: 'home',
+          segment: 'YOUNG',
+          components: [
+            spec('greeting', {}),
+            spec('promo_banner', {
+              'title': 'Gana 5% extra en tu primera meta',
+              'deeplink': 'app://savings',
+            }),
+          ],
+        );
+        await pumpWith(
+          tester,
+          es,
+          const AppSettings(
+            locale: Locale('es'),
+            customerLoaded: true,
+            showPromotions: false,
+          ),
+          layout: withPromo,
+        );
+
+        expect(find.text('Gana 5% extra en tu primera meta'), findsNothing);
+        verify(() => experience.load()).called(1);
+      },
+    );
+
+    testWidgets('con promociones activadas se muestran', (tester) async {
+      when(() => experience.state).thenReturn(
+        ExperienceLayout(
+          screen: 'home',
+          segment: 'YOUNG',
+          components: [
+            spec('promo_banner', {'title': 'x', 'deeplink': 'app://savings'}),
+          ],
+        ),
+      );
+      final settings = MockAppSettingsCubit();
+      when(() => settings.state).thenReturn(es);
+      await pumpPage(
+        tester,
+        const HomePage(),
+        settings: settings,
+        providers: [
+          BlocProvider<ExperienceCubit>.value(value: experience),
+          BlocProvider<AccountsBloc>.value(value: accounts),
+          BlocProvider<FxCubit>.value(value: fx),
+          BlocProvider<ProfileBloc>.value(value: profile),
+        ],
+      );
+
+      expect(find.text('Gana 5% extra en tu primera meta'), findsOneWidget);
+    });
+
+    testWidgets('al cerrar sesión (valores por defecto) NO se pide el layout: '
         'saldría sin token y el backend respondería 401', (tester) async {
       await pumpWith(
         tester,
-        const AppSettings(locale: Locale('en')),
+        const AppSettings(
+          locale: Locale('en'),
+          customerLoaded: true,
+          showPromotions: false,
+        ),
         const AppSettings(),
       );
 
@@ -334,11 +398,7 @@ void main() {
     testWidgets('al cargar las preferencias tras el login no se recarga', (
       tester,
     ) async {
-      await pumpWith(
-        tester,
-        const AppSettings(),
-        const AppSettings(locale: Locale('es')),
-      );
+      await pumpWith(tester, const AppSettings(), es);
 
       verifyNever(() => experience.load());
     });

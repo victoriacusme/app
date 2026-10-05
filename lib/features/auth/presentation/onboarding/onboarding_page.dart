@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -417,8 +419,9 @@ class _WelcomeStep extends StatelessWidget {
         PrimaryButton(
           key: const Key('onboarding_start'),
           label: l10n.start,
-          onPressed: () =>
-              context.read<SessionCubit>().authenticated(state.session!),
+          onPressed: () => unawaited(
+            context.read<SessionCubit>().authenticated(state.session!),
+          ),
         ),
       ],
     );

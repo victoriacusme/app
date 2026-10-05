@@ -26,6 +26,7 @@ void main() {
     session = _MockSession();
     when(() => session.state).thenReturn(const SessionUnauthenticated());
     when(() => cubit.next()).thenAnswer((_) async {});
+    when(() => session.authenticated(any())).thenAnswer((_) async {});
   });
 
   Future<void> pump(WidgetTester tester, OnboardingState state) async {

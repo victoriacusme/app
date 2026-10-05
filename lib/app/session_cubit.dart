@@ -71,7 +71,15 @@ class SessionCubit extends Cubit<SessionState> {
     if (session != null) unawaited(_onSignedIn?.call());
   }
 
-  void authenticated(Session session) {
+  /// Inicio de sesión (contraseña o registro). Si entra un cliente distinto
+  /// al de la sesión guardada (p. ej. bloqueada con biometría), primero se
+  /// borran los datos del anterior: nunca se muestran datos de otro cliente.
+  Future<void> authenticated(Session session) async {
+    final previous = state;
+    if (previous is SessionAuthenticated &&
+        previous.session.customerId != session.customerId) {
+      await _clearUserData();
+    }
     emit(SessionAuthenticated(session));
     unawaited(_onSignedIn?.call());
   }

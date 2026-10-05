@@ -97,28 +97,34 @@ class _NexoAppState extends State<NexoApp> {
         BlocProvider.value(value: widget.settingsCubit),
         BlocProvider.value(value: widget.lockCubit),
       ],
-      child: BlocBuilder<AppSettingsCubit, AppSettings>(
-        buildWhen: (a, b) => a.themeMode != b.themeMode || a.locale != b.locale,
-        builder: (context, settings) => MaterialApp.router(
-          onGenerateTitle: (context) => context.l10n.appTitle,
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.light(),
-          darkTheme: AppTheme.dark(),
-          themeMode: settings.themeMode,
-          // Idioma del cliente o, antes del login, el del dispositivo; si el
-          // dispositivo está en otro idioma, español.
-          locale: settings.locale,
-          supportedLocales: AppLocalizations.supportedLocales,
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          localeResolutionCallback: (device, supported) =>
-              Locale(AppLanguages.resolve(device?.languageCode)),
-          routerConfig: _router,
-          builder: (context, child) => PrivacyCover(
-            onBackgrounded: widget.lockCubit.onBackgrounded,
-            onForegrounded: widget.lockCubit.onForegrounded,
-            child: _OfflineFrame(child: child!),
-          ),
-        ),
+      child: Builder(
+        builder: (context) {
+          final settings = context.watch<AppSettingsCubit>().state;
+          // Con la sesión bloqueada se ve el login: va en el idioma del
+          // teléfono, no en el del cliente guardado (puede entrar otra
+          // persona). La preferencia del cliente se aplica una vez adentro.
+          final locked = context.select((AppLockCubit c) => c.state.locked);
+          return MaterialApp.router(
+            onGenerateTitle: (context) => context.l10n.appTitle,
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.light(),
+            darkTheme: AppTheme.dark(),
+            themeMode: settings.themeMode,
+            // Idioma del cliente o, antes del login, el del dispositivo; si el
+            // dispositivo está en otro idioma, español.
+            locale: locked ? null : settings.locale,
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            localeResolutionCallback: (device, supported) =>
+                Locale(AppLanguages.resolve(device?.languageCode)),
+            routerConfig: _router,
+            builder: (context, child) => PrivacyCover(
+              onBackgrounded: widget.lockCubit.onBackgrounded,
+              onForegrounded: widget.lockCubit.onForegrounded,
+              child: _OfflineFrame(child: child!),
+            ),
+          );
+        },
       ),
     );
   }
