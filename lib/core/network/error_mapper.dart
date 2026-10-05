@@ -25,7 +25,10 @@ abstract final class ErrorMapper {
       );
     }
     return switch (e.type) {
-      DioExceptionType.connectionTimeout ||
+      DioExceptionType.connectionTimeout => NetworkFailure(
+        correlationId: correlationId,
+      ),
+      // Conectó, pero la respuesta no llegó a tiempo.
       DioExceptionType.sendTimeout ||
       DioExceptionType.receiveTimeout ||
       DioExceptionType.transformTimeout => TimeoutFailure(

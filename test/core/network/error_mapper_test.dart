@@ -84,4 +84,18 @@ void main() {
       isA<NetworkFailure>(),
     );
   });
+
+  test('si no se pudo conectar es un error de red, no de lentitud', () {
+    final options = RequestOptions(path: '/auth/register');
+
+    expect(
+      ErrorMapper.fromDio(
+        DioException.connectionTimeout(
+          timeout: const Duration(seconds: 5),
+          requestOptions: options,
+        ),
+      ),
+      isA<NetworkFailure>(),
+    );
+  });
 }
