@@ -1,0 +1,5 @@
+{
+  "ENV": "prod",
+  "API_BASE_URL": "https://api.nexo.ec",
+  "PIN_SHA256": ""
+}

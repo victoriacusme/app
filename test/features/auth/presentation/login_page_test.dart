@@ -1,0 +1,300 @@
+import 'package:bloc_test/bloc_test.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:nexo_bank/app/app_lock_cubit.dart';
+import 'package:nexo_bank/app/session_cubit.dart';
+import 'package:nexo_bank/features/auth/domain/session.dart';
+import 'package:nexo_bank/features/auth/presentation/bloc/login_bloc.dart';
+import 'package:nexo_bank/features/auth/presentation/pages/login_page.dart';
+
+import '../../../helpers/pump_app.dart';
+
+class _MockLoginBloc extends MockBloc<LoginEvent, LoginState>
+    implements LoginBloc {}
+
+class _MockSessionCubit extends MockCubit<SessionState>
+    implements SessionCubit {}
+
+void main() {
+  late _MockLoginBloc loginBloc;
+  late _MockSessionCubit sessionCubit;
+  late MockAppLockCubit lock;
+
+  setUpAll(() {
+    registerFallbackValue(const LoginSubmitted(username: '', password: ''));
+    registerFallbackValue(const Session(customerId: ''));
+  });
+
+  setUp(() {
+    loginBloc = _MockLoginBloc();
+    sessionCubit = _MockSessionCubit();
+    when(() => sessionCubit.authenticated(any())).thenAnswer((_) async {});
+    lock = MockAppLockCubit();
+    when(() => lock.state).thenReturn(const AppLockState());
+    when(() => loginBloc.state).thenReturn(const LoginState());
+    when(() => sessionCubit.state).thenReturn(const SessionUnauthenticated());
+  });
+
+  Future<void> pump(
+    WidgetTester tester, {
+    Locale locale = const Locale('es'),
+    String? savedName,
+  }) => tester.pumpWidget(
+    localizedApp(
+      locale: locale,
+      home: MultiBlocProvider(
+        providers: [
+          BlocProvider<LoginBloc>.value(value: loginBloc),
+          BlocProvider<SessionCubit>.value(value: sessionCubit),
+          BlocProvider<AppLockCubit>.value(value: lock),
+        ],
+        child: LoginPage(savedName: () async => savedName),
+      ),
+    ),
+  );
+
+  testWidgets('con campos vacíos muestra errores y no envía', (tester) async {
+    await pump(tester);
+
+    await tester.tap(find.byKey(const Key('login_submit')));
+    await tester.pump();
+
+    expect(find.text('Ingresa tu usuario'), findsOneWidget);
+    expect(find.text('Ingresa tu contraseña'), findsOneWidget);
+    verifyNever(() => loginBloc.add(any()));
+  });
+
+  testWidgets('con datos válidos envía LoginSubmitted', (tester) async {
+    await pump(tester);
+
+    await tester.enterText(find.byKey(const Key('login_username')), ' ana ');
+    await tester.enterText(
+      find.byKey(const Key('login_password')),
+      'Nexo2026*',
+    );
+    await tester.tap(find.byKey(const Key('login_submit')));
+    await tester.pump();
+
+    final event =
+        verify(() => loginBloc.add(captureAny())).captured.single
+            as LoginSubmitted;
+    expect(event.username, ' ana ');
+    expect(event.password, 'Nexo2026*');
+  });
+
+  testWidgets('la contraseña se oculta y se puede mostrar', (tester) async {
+    await pump(tester);
+
+    EditableText password() => tester.widget<EditableText>(
+      find.descendant(
+        of: find.byKey(const Key('login_password')),
+        matching: find.byType(EditableText),
+      ),
+    );
+
+    expect(password().obscureText, isTrue);
+    await tester.tap(find.byTooltip('Mostrar contraseña'));
+    await tester.pump();
+    expect(password().obscureText, isFalse);
+  });
+
+  testWidgets('mientras envía muestra el indicador y deshabilita el botón', (
+    tester,
+  ) async {
+    when(() => loginBloc.state)
+        .thenReturn(const LoginState(status: LoginStatus.submitting));
+    await pump(tester);
+
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    final button = tester.widget<FilledButton>(find.byType(FilledButton));
+    expect(button.onPressed, isNull);
+  });
+
+  testWidgets('muestra el mensaje de error del estado', (tester) async {
+    when(() => loginBloc.state).thenReturn(
+      const LoginState(
+        status: LoginStatus.failure,
+        error: LoginError.invalidCredentials,
+      ),
+    );
+    await pump(tester);
+
+    expect(find.byKey(const Key('login_error')), findsOneWidget);
+    expect(find.text('Usuario o contraseña incorrectos.'), findsOneWidget);
+  });
+
+  testWidgets('al tener éxito avisa al SessionCubit', (tester) async {
+    const session = Session(customerId: 'customer-1');
+    whenListen(
+      loginBloc,
+      Stream.value(
+        const LoginState(status: LoginStatus.success, session: session),
+      ),
+      initialState: const LoginState(),
+    );
+    await pump(tester);
+    await tester.pump();
+
+    verify(() => sessionCubit.authenticated(session)).called(1);
+    // Entrar con contraseña también desbloquea una sesión guardada.
+    verify(() => lock.passwordSignedIn()).called(1);
+  });
+
+  testWidgets('ofrece crear una cuenta', (tester) async {
+    await pump(tester);
+
+    expect(find.byKey(const Key('login_create_account')), findsOneWidget);
+  });
+
+  testWidgets('si la sesión expiró lo indica', (tester) async {
+    when(() => sessionCubit.state)
+        .thenReturn(const SessionUnauthenticated(expired: true));
+    await pump(tester);
+
+    expect(find.textContaining('sesión expiró'), findsOneWidget);
+  });
+
+  testWidgets('con el idioma en inglés toda la pantalla está en inglés', (
+    tester,
+  ) async {
+    when(() => loginBloc.state).thenReturn(
+      const LoginState(status: LoginStatus.failure, error: LoginError.locked),
+    );
+    await pump(tester, locale: const Locale('en'));
+
+    expect(find.text('Welcome to Nexo'), findsOneWidget);
+    expect(find.text('Username'), findsOneWidget);
+    expect(find.text('Sign in'), findsOneWidget);
+    expect(find.textContaining('Your user is locked'), findsOneWidget);
+    expect(find.text('Open an account'), findsOneWidget);
+    expect(find.text('Help'), findsOneWidget);
+    expect(find.textContaining('Bienvenido'), findsNothing);
+  });
+
+  group('ingreso con biometría', () {
+    const savedSession = AppLockState(
+      available: true,
+      enabled: true,
+      locked: true,
+    );
+
+    testWidgets('sin sesión guardada solo se ofrece usuario y contraseña', (
+      tester,
+    ) async {
+      await pump(tester);
+
+      expect(find.byKey(const Key('login_biometric')), findsNothing);
+      expect(find.byKey(const Key('login_submit')), findsOneWidget);
+      expect(find.byKey(const Key('login_create_account')), findsOneWidget);
+    });
+
+    testWidgets(
+      'con sesión guardada: saludo por nombre y dos formas de entrar',
+      (tester) async {
+        when(() => lock.state).thenReturn(savedSession);
+        await pump(tester, savedName: 'Ana');
+        await tester.pump();
+
+        expect(find.text('Hola, Ana'), findsOneWidget);
+        expect(find.text('Ingresar con huella o rostro'), findsOneWidget);
+        expect(find.text('Usuario y contraseña'), findsOneWidget);
+        // El formulario aparece al elegir "Usuario y contraseña".
+        expect(find.byKey(const Key('login_submit')), findsNothing);
+        expect(
+          find.byKey(const Key('login_use_another_account')),
+          findsOneWidget,
+        );
+        // Con sesión guardada no se ofrece abrir otra cuenta.
+        expect(find.byKey(const Key('login_create_account')), findsNothing);
+
+        await tester.tap(find.byKey(const Key('login_show_password')));
+        await tester.pump();
+
+        expect(find.byKey(const Key('login_submit')), findsOneWidget);
+        expect(find.byKey(const Key('login_username')), findsOneWidget);
+      },
+    );
+
+    testWidgets('si la biometría no está activada no aparece el botón', (
+      tester,
+    ) async {
+      when(() => lock.state)
+          .thenReturn(const AppLockState(available: true, locked: true));
+      await pump(tester);
+
+      expect(find.byKey(const Key('login_biometric')), findsNothing);
+    });
+
+    testWidgets('tocar el botón pide la huella o el rostro', (tester) async {
+      when(() => lock.state).thenReturn(savedSession);
+      when(() => lock.unlock(reason: any(named: 'reason')))
+          .thenAnswer((_) async => true);
+      await pump(tester);
+
+      await tester.tap(find.byKey(const Key('login_biometric')));
+      await tester.pump();
+
+      verify(() => lock.unlock(reason: 'Desbloquea Nexo Bank')).called(1);
+      expect(find.byKey(const Key('login_biometric_error')), findsNothing);
+    });
+
+    testWidgets('si la biometría falla lo indica y deja usar la contraseña', (
+      tester,
+    ) async {
+      when(() => lock.state).thenReturn(savedSession);
+      when(() => lock.unlock(reason: any(named: 'reason')))
+          .thenAnswer((_) async => false);
+      await pump(tester);
+
+      await tester.tap(find.byKey(const Key('login_biometric')));
+      await tester.pump();
+
+      expect(find.text('No pudimos verificar tu identidad.'), findsOneWidget);
+      // Sigue disponible la otra forma de entrar.
+      expect(find.byKey(const Key('login_show_password')), findsOneWidget);
+    });
+
+    testWidgets('"Usar otra cuenta" cierra la sesión guardada del todo', (
+      tester,
+    ) async {
+      when(() => lock.state).thenReturn(savedSession);
+      when(() => sessionCubit.logout()).thenAnswer((_) async {});
+      await pump(tester);
+
+      await tester.tap(find.byKey(const Key('login_use_another_account')));
+
+      verify(() => sessionCubit.logout()).called(1);
+    });
+
+    testWidgets('en inglés el botón también está traducido', (tester) async {
+      when(() => lock.state).thenReturn(savedSession);
+      await pump(tester, locale: const Locale('en'));
+
+      expect(find.text('Sign in with fingerprint or face'), findsOneWidget);
+      expect(find.text('Not you? Use another account'), findsOneWidget);
+    });
+  });
+
+  testWidgets('sin sesión guardada muestra el formulario y los accesos', (
+    tester,
+  ) async {
+    await pump(tester);
+
+    expect(find.text('Bienvenido a Nexo'), findsOneWidget);
+    expect(find.byKey(const Key('login_submit')), findsOneWidget);
+    expect(find.text('Abrir cuenta'), findsOneWidget);
+    expect(find.text('Ayuda'), findsOneWidget);
+  });
+
+  testWidgets('"Ayuda" abre la hoja de contacto', (tester) async {
+    await pump(tester);
+
+    await tester.tap(find.byKey(const Key('login_help')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('¿Necesitas ayuda?'), findsOneWidget);
+    expect(find.text('ayuda@nexo.ec'), findsOneWidget);
+  });
+}

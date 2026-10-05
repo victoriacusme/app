@@ -1,0 +1,7 @@
+tags:
+  contract:
+    # Requiere el backend levantado: CONTRACT_BASE_URL=http://localhost:8080
+  chaos:
+    # Requiere backend + Toxiproxy: CHAOS_BASE_URL=http://localhost:8080
+  golden:
+    # Snapshots visuales: flutter test --update-goldens para regenerarlos
