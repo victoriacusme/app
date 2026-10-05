@@ -2,24 +2,35 @@
 
 **Estado:** aceptada
 
+**En pocas palabras:** uso Bloc para manejar el estado de las pantallas
+porque deja cada paso de un flujo escrito de forma explícita, y eso es lo
+que necesito en el login y en las transferencias.
+
 ## Contexto
-Los flujos críticos (login, transferencia) son máquinas de estados con
-pasos y errores bien definidos, y deben ser auditables y fáciles de probar.
+Los flujos más delicados de la app, como el login y la transferencia, son
+una secuencia de pasos con errores bien definidos. Quería que cualquiera
+pudiera leer esos pasos en el código, revisarlos y probarlos sin esfuerzo.
 
 ## Decisión
-`flutter_bloc`: Bloc cuando hay eventos con concurrencia que controlar
-(p. ej. `droppable` para que un doble toque en "Confirmar" no envíe dos
-transferencias, `restartable` para refrescos) y Cubit para estados simples.
-`bloc_test` para probar transiciones.
+Uso `flutter_bloc`:
+
+- **Bloc** cuando llegan eventos y necesito controlar qué pasa si se
+  repiten. Por ejemplo, con `droppable` un doble toque en "Confirmar" no
+  envía dos transferencias, y con `restartable` un refresco nuevo cancela
+  el anterior.
+- **Cubit** (la versión simple de Bloc) para estados sencillos, como los
+  ajustes o la conectividad.
+- **`bloc_test`** para probar cada transición de estado.
 
 ## Alternativas
-- **Riverpod**: menos código y muy buena composición, pero los flujos con
-  eventos y transformadores de concurrencia quedan menos explícitos.
-- **setState / ChangeNotifier**: insuficiente para flujos de dinero.
+- **Riverpod:** menos código y muy buena composición, pero los flujos con
+  eventos y control de concurrencia quedan menos visibles.
+- **`setState` o `ChangeNotifier`:** se quedan cortos para flujos de
+  dinero.
 
 ## Consecuencias
-- Más código repetitivo (eventos, estados), a cambio de transiciones
-  explícitas que se leen como una especificación
-  (`Editing → Confirming → Submitting → Success | Rejected | Unknown`).
-- Cada sección del home tiene su propio Bloc, lo que permite que se degrade
-  sola cuando falla su servicio.
+- Escribo más código (eventos y estados), pero a cambio las transiciones
+  se leen como una especificación:
+  `Editing → Confirming → Submitting → Success | Rejected | Unknown`.
+- Cada sección del home tiene su propio Bloc, así que si falla el servicio
+  de una sección, solo esa sección se degrada.

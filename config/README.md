@@ -1,26 +1,28 @@
 # Entornos de la app
 
-**No hace falta usarlos para desarrollar:** sin archivo, la app elige sola
-el backend según el dispositivo (ver `lib/core/config/env.dart`): teléfono
-físico → túnel HTTPS, emulador → PC directo.
+**Para desarrollar no necesitas estos archivos.** Sin ellos, la app elige
+sola el backend según el dispositivo (ver `lib/core/config/env.dart`): en
+un teléfono físico usa el túnel HTTPS, y en el emulador se conecta directo
+a la PC.
 
-Estos archivos fijan una URL explícita, que siempre manda. Se elige al
-compilar:
+Estos archivos sirven para fijar una URL concreta, que siempre tiene
+prioridad. Se eligen al compilar:
 
 ```bash
 flutter run --dart-define-from-file=config/staging.json
 flutter build apk --release --dart-define-from-file=config/staging.json
 ```
 
-| Archivo | Para qué | Backend |
+| Archivo | Para qué sirve | Backend |
 |---|---|---|
-| `dev.json` | Emulador de Android | `http://10.0.2.2:8080` (la PC vista desde el emulador) |
-| `staging.json` | **Cualquier teléfono, en cualquier red** | Túnel HTTPS fijo hacia el gateway local (ver `app-backend`, perfil `tunnel`) |
-| `prod.json` | Producción | `https://api.nexo.ec` con certificate pinning (`PIN_SHA256`) |
+| `dev.json` | Emulador de Android | `http://10.0.2.2:8080` (así ve el emulador a la PC) |
+| `staging.json` | Cualquier teléfono, en cualquier red | El túnel HTTPS fijo hacia el gateway local (perfil `tunnel` en `app-backend`) |
+| `prod.json` | Producción | `https://api.nexo.ec`, con certificate pinning (`PIN_SHA256`) |
 
-Para que todos los teléfonos funcionen sin configurar nada se usa
-**staging**: la URL es la misma para todo el equipo y se versiona aquí. Basta
-con completarla una vez con el dominio estático del túnel.
+La URL de `staging.json` es la misma para todo el equipo y está versionada
+aquí. Por eso un APK compilado con ella funciona en cualquier teléfono, sin
+configurar nada más.
 
-Las configuraciones de ejecución compartidas (`.run/` para Android Studio /
-IntelliJ y `.vscode/launch.json`) ya usan estos archivos.
+Las configuraciones de ejecución compartidas del IDE (`.run/` para Android
+Studio o IntelliJ y `.vscode/launch.json`) ya ofrecen estos archivos como
+opciones.

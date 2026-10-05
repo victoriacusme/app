@@ -1,7 +1,16 @@
-# ADRs del front (Nexo Bank)
+# Decisiones de arquitectura (ADRs)
 
-Registro de decisiones de arquitectura de la app Flutter. Cada ADR explica
-el contexto, la decisión, las alternativas que se descartaron y sus costos.
+Aquí registro las decisiones importantes que tomé al construir la app
+Flutter de Nexo Bank. Cada documento (ADR, *Architecture Decision Record*)
+responde cuatro preguntas:
+
+- **Contexto:** qué problema tenía.
+- **Decisión:** qué elegí y cómo lo implementé.
+- **Alternativas:** qué otras opciones consideré y por qué las descarté.
+- **Consecuencias:** qué gano y qué costo asumo.
+
+Cada uno empieza con un resumen **En pocas palabras**, para quien solo
+quiera la idea general.
 
 | # | Decisión | Estado |
 |---|---|---|
